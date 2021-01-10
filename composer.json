@@ -1,0 +1,33 @@
+{
+    "name": "zenstruck/messenger-test",
+    "description": "Assertions and helpers for testing your symfony/messenger queues.",
+    "homepage": "https://github.com/zenstruck/messenger-test",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["messenger", "symfony", "test", "queue"],
+    "authors": [
+        {
+            "name": "Kevin Bond",
+            "email": "kevinbond@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "symfony/framework-bundle": "^4.4|^5.0",
+        "symfony/messenger": "^4.4|^5.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5.0",
+        "symfony/phpunit-bridge": "^5.2"
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": { "Zenstruck\\Messenger\\Test\\": "src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "Zenstruck\\Messenger\\Test\\Tests\\": "tests/" }
+    }
+}
