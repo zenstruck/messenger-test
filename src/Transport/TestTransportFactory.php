@@ -29,32 +29,7 @@ final class TestTransportFactory implements TransportFactoryInterface, ResetInte
     {
         ['intercept' => $intercept] = $this->parseDsn($dsn);
 
-        return $this->transports[$options['transport_name']] = new TestTransport($this->bus, $serializer, $intercept);
-    }
-
-    public function get(?string $name = null): TestTransport
-    {
-        if (0 === \count($this->transports)) {
-            throw new \LogicException('No transports registered.');
-        }
-
-        if (null === $name && 1 !== \count($this->transports)) {
-            throw new \InvalidArgumentException('Multiple transports are registered, you must specify a name.');
-        }
-
-        if (null === $name) {
-            $name = \array_key_first($this->transports);
-        }
-
-        if (!$transport = $this->transports[$name] ?? null) {
-            throw new \InvalidArgumentException("Transport \"{$name}\" not registered.");
-        }
-
-        if (!$transport instanceof TestTransport) {
-            throw new \LogicException("Transport \"{$name}\" needs to be set to \"test://\" in your test config to use this feature.");
-        }
-
-        return $transport;
+        return $this->transports[] = new TestTransport($this->bus, $serializer, $intercept);
     }
 
     public function supports(string $dsn, array $options): bool

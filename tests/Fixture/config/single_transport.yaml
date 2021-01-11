@@ -1,0 +1,10 @@
+imports:
+    - { resource: test.yaml }
+
+framework:
+    messenger:
+        transports:
+            async: test://
+        routing:
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: [async]
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageB: [async]

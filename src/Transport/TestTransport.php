@@ -6,7 +6,6 @@ use PHPUnit\Framework\Assert as PHPUnit;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
-use Symfony\Component\Messenger\Exception\InvalidArgumentException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\Sync\SyncTransport;
@@ -23,9 +22,17 @@ final class TestTransport implements TransportInterface, ResetInterface
     private SyncTransport $syncTransport;
     private SerializerInterface $serializer;
     private bool $intercept;
+
+    /** @var Envelope[] */
     private array $sent = [];
+
+    /** @var Envelope[] */
     private array $acknowledged = [];
+
+    /** @var Envelope[] */
     private array $rejected = [];
+
+    /** @var Envelope[] */
     private array $queue = [];
 
     public function __construct(MessageBusInterface $bus, SerializerInterface $serializer, bool $intercept = true)
@@ -67,7 +74,7 @@ final class TestTransport implements TransportInterface, ResetInterface
 
     public function assertCount(int $count): self
     {
-        PHPUnit::assertCount($count, $this->get(), \sprintf('Expected %d messages on queue, but %d messages found.', $count, \count($this->get())));
+        PHPUnit::assertCount($count, $this->queue, \sprintf('Expected %d messages on queue, but %d messages found.', $count, \count($this->queue)));
 
         return $this;
     }
@@ -100,7 +107,7 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function process(?int $number = null): self
     {
-        if (null === $number && !$this->intercept) {
+        if (!$this->intercept) {
             return $this;
         }
 
@@ -130,7 +137,7 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function sent(): array
     {
-        return $this->decode($this->sent);
+        return $this->sent;
     }
 
     /**
@@ -138,7 +145,7 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function acknowledged(): array
     {
-        return $this->decode($this->acknowledged);
+        return $this->acknowledged;
     }
 
     /**
@@ -146,7 +153,7 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function rejected(): array
     {
-        return $this->decode($this->rejected);
+        return $this->rejected;
     }
 
     /**
@@ -156,11 +163,7 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function get(): array
     {
-        if (!$this->intercept) {
-            throw new InvalidArgumentException('You cannot access the queued messages when not in "intercept" mode.');
-        }
-
-        return \array_values($this->decode($this->queue));
+        return \array_values($this->queue);
     }
 
     /**
@@ -170,13 +173,13 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function messages(?string $class = null): array
     {
-        $messages = \array_map(static fn(Envelope $envelope) => $envelope->getMessage(), $this->get());
+        $messages = \array_map(static fn(Envelope $envelope) => $envelope->getMessage(), \array_values($this->queue));
 
         if (!$class) {
             return $messages;
         }
 
-        return \array_filter($messages, static fn(object $message) => $class === \get_class($message));
+        return \array_values(\array_filter($messages, static fn(object $message) => $class === \get_class($message)));
     }
 
     /**
@@ -184,13 +187,8 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function ack(Envelope $envelope): void
     {
-        if (!$this->intercept) {
-            throw new InvalidArgumentException('You cannot call ack() on the TestTransport when not in "intercept" mode.');
-        }
-
-        $this->acknowledged[] = $this->encode($envelope);
-        $id = \spl_object_hash($envelope->getMessage());
-        unset($this->queue[$id]);
+        $this->acknowledged[] = $envelope;
+        unset($this->queue[\spl_object_hash($envelope->getMessage())]);
     }
 
     /**
@@ -198,13 +196,8 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function reject(Envelope $envelope): void
     {
-        if (!$this->intercept) {
-            throw new InvalidArgumentException('You cannot call reject() on the TestTransport not in "intercept" mode.');
-        }
-
-        $this->rejected[] = $this->encode($envelope);
-        $id = \spl_object_hash($envelope->getMessage());
-        unset($this->queue[$id]);
+        $this->rejected[] = $envelope;
+        unset($this->queue[\spl_object_hash($envelope->getMessage())]);
     }
 
     /**
@@ -216,10 +209,11 @@ final class TestTransport implements TransportInterface, ResetInterface
             return $this->syncTransport->send($envelope);
         }
 
-        $encodedEnvelope = $this->encode($envelope);
-        $this->sent[] = $encodedEnvelope;
-        $id = \spl_object_hash($envelope->getMessage());
-        $this->queue[$id] = $encodedEnvelope;
+        // ensure serialization works (todo configurable? better error on failure?)
+        $this->serializer->decode($this->serializer->encode($envelope));
+
+        $this->sent[] = $envelope;
+        $this->queue[\spl_object_hash($envelope->getMessage())] = $envelope;
 
         return $envelope;
     }
@@ -230,18 +224,5 @@ final class TestTransport implements TransportInterface, ResetInterface
     public function reset(): void
     {
         $this->sent = $this->queue = $this->rejected = $this->acknowledged = [];
-    }
-
-    private function encode(Envelope $envelope): array
-    {
-        return $this->serializer->encode($envelope);
-    }
-
-    /**
-     * @return Envelope[]
-     */
-    private function decode(array $messagesEncoded): array
-    {
-        return \array_map([$this->serializer, 'decode'], $messagesEncoded);
     }
 }

@@ -1,0 +1,21 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageAHandler: ~
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageBHandler: ~
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageCHandler: ~
+
+    # disable logging
+    logger:
+        class: Psr\Log\NullLogger
+
+    message_bus:
+        alias: Symfony\Component\Messenger\MessageBusInterface
+
+framework:
+    secret: S3CRET
+    router: { utf8: true }
+    test: true
