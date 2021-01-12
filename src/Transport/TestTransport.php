@@ -8,7 +8,6 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
-use Symfony\Component\Messenger\Transport\Sync\SyncTransport;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
 use Symfony\Contracts\Service\ResetInterface;
@@ -20,7 +19,6 @@ use Zenstruck\Messenger\Test\EnvelopeCollection;
 final class TestTransport implements TransportInterface, ResetInterface
 {
     private MessageBusInterface $bus;
-    private SyncTransport $syncTransport;
     private SerializerInterface $serializer;
     private bool $intercept;
 
@@ -39,7 +37,6 @@ final class TestTransport implements TransportInterface, ResetInterface
     public function __construct(MessageBusInterface $bus, SerializerInterface $serializer, bool $intercept = true)
     {
         $this->bus = $bus;
-        $this->syncTransport = new SyncTransport($bus);
         $this->serializer = $serializer;
         $this->intercept = $intercept;
     }
@@ -74,10 +71,6 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function process(?int $number = null): self
     {
-        if (!$this->intercept) {
-            return $this;
-        }
-
         $count = \count($this->queue);
 
         if (null === $number) {
@@ -150,15 +143,15 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function send(Envelope $envelope): Envelope
     {
-        if (!$this->intercept) {
-            return $this->syncTransport->send($envelope);
-        }
-
         // ensure serialization works (todo configurable? better error on failure?)
         $this->serializer->decode($this->serializer->encode($envelope));
 
         $this->sent[] = $envelope;
         $this->queue[\spl_object_hash($envelope->getMessage())] = $envelope;
+
+        if (!$this->intercept) {
+            $this->process();
+        }
 
         return $envelope;
     }

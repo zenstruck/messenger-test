@@ -72,6 +72,8 @@ final class InteractsWithTransportTest extends WebTestCase
         $this->transport()->unblock();
 
         $this->transport()->queue()->assertEmpty();
+        $this->transport()->acknowledged()->assertEmpty();
+        $this->transport()->sent()->assertEmpty();
 
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageB());
@@ -79,6 +81,12 @@ final class InteractsWithTransportTest extends WebTestCase
 
         $this->transport()->queue()->assertEmpty();
         $this->transport()->queue()->assertNotContains(MessageA::class);
+        $this->transport()->sent()->assertCount(3);
+        $this->transport()->sent()->assertContains(MessageA::class, 2);
+        $this->transport()->sent()->assertContains(MessageB::class, 1);
+        $this->transport()->acknowledged()->assertCount(3);
+        $this->transport()->acknowledged()->assertContains(MessageA::class, 2);
+        $this->transport()->acknowledged()->assertContains(MessageB::class, 1);
         $this->assertCount(2, self::$container->get(MessageAHandler::class)->messages);
         $this->assertCount(1, self::$container->get(MessageBHandler::class)->messages);
     }
