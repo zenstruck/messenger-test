@@ -3,14 +3,14 @@
 namespace Zenstruck\Messenger\Test\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Zenstruck\Messenger\Test\InteractsWithQueue;
+use Zenstruck\Messenger\Test\InteractsWithTransport;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
 final class NonKernelTestCaseTest extends TestCase
 {
-    use InteractsWithQueue;
+    use InteractsWithTransport;
 
     /**
      * @test
@@ -20,6 +20,6 @@ final class NonKernelTestCaseTest extends TestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('trait can only be used with');
 
-        $this->queue();
+        $this->transport();
     }
 }

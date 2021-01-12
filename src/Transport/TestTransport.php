@@ -12,6 +12,7 @@ use Symfony\Component\Messenger\Transport\Sync\SyncTransport;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
 use Symfony\Contracts\Service\ResetInterface;
+use Zenstruck\Messenger\Test\EnvelopeCollection;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
@@ -67,40 +68,6 @@ final class TestTransport implements TransportInterface, ResetInterface
         return $this;
     }
 
-    public function assertEmpty(): self
-    {
-        return $this->assertCount(0);
-    }
-
-    public function assertCount(int $count): self
-    {
-        PHPUnit::assertCount($count, $this->queue, \sprintf('Expected %d messages on queue, but %d messages found.', $count, \count($this->queue)));
-
-        return $this;
-    }
-
-    public function assertPushed(string $messageClass, ?int $times = null): self
-    {
-        $actual = $this->messages($messageClass);
-
-        PHPUnit::assertNotEmpty($actual, "Message \"{$messageClass}\" not found on queue.");
-
-        if (null !== $times) {
-            PHPUnit::assertCount($times, $actual, \sprintf('Expected to find message "%s" on queue %d times but found %d times.', $messageClass, $times, \count($actual)));
-        }
-
-        return $this;
-    }
-
-    public function assertNotPushed(string $messageClass): self
-    {
-        $actual = $this->messages($messageClass);
-
-        PHPUnit::assertEmpty($actual, "Message \"{$messageClass}\" is on queue but it should not be.");
-
-        return $this;
-    }
-
     /**
      * @param int|null $number int: the number of messages on the queue to process
      *                         null: process all messages on the queue
@@ -132,54 +99,32 @@ final class TestTransport implements TransportInterface, ResetInterface
         return $this;
     }
 
-    /**
-     * @return Envelope[]
-     */
-    public function sent(): array
+    public function queue(): EnvelopeCollection
     {
-        return $this->sent;
+        return new EnvelopeCollection(...\array_values($this->queue));
+    }
+
+    public function sent(): EnvelopeCollection
+    {
+        return new EnvelopeCollection(...$this->sent);
+    }
+
+    public function acknowledged(): EnvelopeCollection
+    {
+        return new EnvelopeCollection(...$this->acknowledged);
+    }
+
+    public function rejected(): EnvelopeCollection
+    {
+        return new EnvelopeCollection(...$this->rejected);
     }
 
     /**
-     * @return Envelope[]
+     * @internal
      */
-    public function acknowledged(): array
-    {
-        return $this->acknowledged;
-    }
-
-    /**
-     * @return Envelope[]
-     */
-    public function rejected(): array
-    {
-        return $this->rejected;
-    }
-
-    /**
-     * The queued envelopes.
-     *
-     * @return Envelope[]
-     */
-    public function get(): array
+    public function get(): iterable
     {
         return \array_values($this->queue);
-    }
-
-    /**
-     * The queued messages (extracted from envelopes).
-     *
-     * @return object[]
-     */
-    public function messages(?string $class = null): array
-    {
-        $messages = \array_map(static fn(Envelope $envelope) => $envelope->getMessage(), \array_values($this->queue));
-
-        if (!$class) {
-            return $messages;
-        }
-
-        return \array_values(\array_filter($messages, static fn(object $message) => $class === \get_class($message)));
     }
 
     /**

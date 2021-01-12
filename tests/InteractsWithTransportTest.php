@@ -4,8 +4,9 @@ namespace Zenstruck\Messenger\Test\Tests;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Zenstruck\Messenger\Test\InteractsWithQueue;
+use Zenstruck\Messenger\Test\InteractsWithTransport;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageAHandler;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageB;
@@ -16,9 +17,9 @@ use Zenstruck\Messenger\Test\Tests\Fixture\NoBundleKernel;
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
-final class InteractsWithQueueTest extends WebTestCase
+final class InteractsWithTransportTest extends WebTestCase
 {
-    use InteractsWithQueue;
+    use InteractsWithTransport;
 
     /**
      * @test
@@ -27,7 +28,7 @@ final class InteractsWithQueueTest extends WebTestCase
     {
         self::bootKernel();
 
-        $this->queue()->assertEmpty();
+        $this->transport()->queue()->assertEmpty();
         $this->assertEmpty(self::$container->get(MessageAHandler::class)->messages);
         $this->assertEmpty(self::$container->get(MessageBHandler::class)->messages);
 
@@ -35,28 +36,28 @@ final class InteractsWithQueueTest extends WebTestCase
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageB());
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
 
-        $this->queue()->assertCount(3);
-        $this->queue()->assertPushed(MessageA::class);
-        $this->queue()->assertPushed(MessageA::class, 2);
-        $this->queue()->assertPushed(MessageB::class);
-        $this->queue()->assertPushed(MessageB::class, 1);
-        $this->queue()->assertNotPushed(MessageC::class);
+        $this->transport()->queue()->assertCount(3);
+        $this->transport()->queue()->assertContains(MessageA::class);
+        $this->transport()->queue()->assertContains(MessageA::class, 2);
+        $this->transport()->queue()->assertContains(MessageB::class);
+        $this->transport()->queue()->assertContains(MessageB::class, 1);
+        $this->transport()->queue()->assertNotContains(MessageC::class);
         $this->assertEmpty(self::$container->get(MessageAHandler::class)->messages);
         $this->assertEmpty(self::$container->get(MessageBHandler::class)->messages);
 
-        $this->queue()->process(2);
+        $this->transport()->process(2);
 
-        $this->queue()->assertCount(1);
-        $this->queue()->assertPushed(MessageA::class, 1);
-        $this->queue()->assertNotPushed(MessageB::class);
+        $this->transport()->queue()->assertCount(1);
+        $this->transport()->queue()->assertContains(MessageA::class, 1);
+        $this->transport()->queue()->assertNotContains(MessageB::class);
         $this->assertCount(1, self::$container->get(MessageAHandler::class)->messages);
         $this->assertCount(1, self::$container->get(MessageBHandler::class)->messages);
 
-        $this->queue()->process();
+        $this->transport()->process();
 
-        $this->queue()->assertEmpty();
-        $this->queue()->assertNotPushed(MessageA::class);
-        $this->queue()->assertNotPushed(MessageB::class);
+        $this->transport()->queue()->assertEmpty();
+        $this->transport()->queue()->assertNotContains(MessageA::class);
+        $this->transport()->queue()->assertNotContains(MessageB::class);
         $this->assertCount(2, self::$container->get(MessageAHandler::class)->messages);
         $this->assertCount(1, self::$container->get(MessageBHandler::class)->messages);
     }
@@ -68,16 +69,16 @@ final class InteractsWithQueueTest extends WebTestCase
     {
         self::bootKernel();
 
-        $this->queue()->unblock();
+        $this->transport()->unblock();
 
-        $this->queue()->assertEmpty();
+        $this->transport()->queue()->assertEmpty();
 
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageB());
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
 
-        $this->queue()->assertEmpty();
-        $this->queue()->assertNotPushed(MessageA::class);
+        $this->transport()->queue()->assertEmpty();
+        $this->transport()->queue()->assertNotContains(MessageA::class);
         $this->assertCount(2, self::$container->get(MessageAHandler::class)->messages);
         $this->assertCount(1, self::$container->get(MessageBHandler::class)->messages);
     }
@@ -93,11 +94,11 @@ final class InteractsWithQueueTest extends WebTestCase
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageB());
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
 
-        $this->queue()->assertCount(3);
+        $this->transport()->queue()->assertCount(3);
 
-        $this->queue()->process();
+        $this->transport()->process();
 
-        $this->queue()->assertEmpty();
+        $this->transport()->queue()->assertEmpty();
         $this->assertCount(2, self::$container->get(MessageAHandler::class)->messages);
         $this->assertCount(1, self::$container->get(MessageBHandler::class)->messages);
     }
@@ -112,7 +113,7 @@ final class InteractsWithQueueTest extends WebTestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('No transports registered');
 
-        $this->queue();
+        $this->transport();
     }
 
     /**
@@ -123,7 +124,7 @@ final class InteractsWithQueueTest extends WebTestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('kernel must be booted');
 
-        $this->queue();
+        $this->transport();
     }
 
     /**
@@ -133,8 +134,8 @@ final class InteractsWithQueueTest extends WebTestCase
     {
         self::bootKernel(['environment' => 'multi_transport']);
 
-        $this->queue('async1')->assertEmpty();
-        $this->queue('async2')->assertEmpty();
+        $this->transport('async1')->queue()->assertEmpty();
+        $this->transport('async2')->queue()->assertEmpty();
         $this->assertEmpty(self::$container->get(MessageAHandler::class)->messages);
         $this->assertEmpty(self::$container->get(MessageBHandler::class)->messages);
 
@@ -142,28 +143,28 @@ final class InteractsWithQueueTest extends WebTestCase
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageB());
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
 
-        $this->queue('async1')->assertCount(2);
-        $this->queue('async2')->assertEmpty();
-        $this->queue('async1')->assertPushed(MessageA::class);
-        $this->queue('async1')->assertPushed(MessageA::class, 2);
-        $this->queue('async2')->assertNotPushed(MessageB::class);
+        $this->transport('async1')->queue()->assertCount(2);
+        $this->transport('async2')->queue()->assertEmpty();
+        $this->transport('async1')->queue()->assertContains(MessageA::class);
+        $this->transport('async1')->queue()->assertContains(MessageA::class, 2);
+        $this->transport('async2')->queue()->assertNotContains(MessageB::class);
         $this->assertEmpty(self::$container->get(MessageAHandler::class)->messages);
         $this->assertCount(1, self::$container->get(MessageBHandler::class)->messages);
 
-        $this->queue('async1')->process(1);
-        $this->queue('async2')->process(1);
+        $this->transport('async1')->process(1);
+        $this->transport('async2')->process(1);
 
-        $this->queue('async1')->assertCount(1);
-        $this->queue('async1')->assertPushed(MessageA::class, 1);
-        $this->queue('async2')->assertNotPushed(MessageB::class);
+        $this->transport('async1')->queue()->assertCount(1);
+        $this->transport('async1')->queue()->assertContains(MessageA::class, 1);
+        $this->transport('async2')->queue()->assertNotContains(MessageB::class);
         $this->assertCount(1, self::$container->get(MessageAHandler::class)->messages);
         $this->assertCount(1, self::$container->get(MessageBHandler::class)->messages);
 
-        $this->queue('async1')->process();
-        $this->queue('async2')->process();
+        $this->transport('async1')->process();
+        $this->transport('async2')->process();
 
-        $this->queue('async1')->assertEmpty();
-        $this->queue('async2')->assertEmpty();
+        $this->transport('async1')->queue()->assertEmpty();
+        $this->transport('async2')->queue()->assertEmpty();
         $this->assertCount(2, self::$container->get(MessageAHandler::class)->messages);
         $this->assertCount(1, self::$container->get(MessageBHandler::class)->messages);
     }
@@ -175,15 +176,15 @@ final class InteractsWithQueueTest extends WebTestCase
     {
         self::bootKernel(['environment' => 'multi_transport']);
 
-        $this->queue('async2')->intercept();
+        $this->transport('async2')->intercept();
 
-        $this->queue('async2')->assertEmpty();
+        $this->transport('async2')->queue()->assertEmpty();
         $this->assertEmpty(self::$container->get(MessageBHandler::class)->messages);
 
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageB());
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageB());
 
-        $this->queue('async2')->assertCount(2);
+        $this->transport('async2')->queue()->assertCount(2);
     }
 
     /**
@@ -196,7 +197,7 @@ final class InteractsWithQueueTest extends WebTestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('"invalid" not registered');
 
-        $this->queue('invalid');
+        $this->transport('invalid');
     }
 
     /**
@@ -209,7 +210,7 @@ final class InteractsWithQueueTest extends WebTestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('Transport "async3" needs to be set to "test://" in your test config to use this feature.');
 
-        $this->queue('async3');
+        $this->transport('async3');
     }
 
     /**
@@ -222,7 +223,7 @@ final class InteractsWithQueueTest extends WebTestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('Multiple transports are registered (async1, async2, async3), you must specify a name.');
 
-        $this->queue();
+        $this->transport();
     }
 
     /**
@@ -236,9 +237,25 @@ final class InteractsWithQueueTest extends WebTestCase
         self::$container->get(MessageBusInterface::class)->dispatch($m2 = new MessageB());
         self::$container->get(MessageBusInterface::class)->dispatch($m3 = new MessageA());
 
-        $this->assertSame([$m1, $m2, $m3], $this->queue()->messages());
-        $this->assertSame([$m1, $m3], $this->queue()->messages(MessageA::class));
-        $this->assertSame([$m2], $this->queue()->messages(MessageB::class));
+        $this->assertSame([$m1, $m2, $m3], $this->transport()->queue()->messages());
+        $this->assertSame([$m1, $m3], $this->transport()->queue()->messages(MessageA::class));
+        $this->assertSame([$m2], $this->transport()->queue()->messages(MessageB::class));
+    }
+
+    /**
+     * @test
+     */
+    public function can_access_envelopes_on_queue(): void
+    {
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch($m1 = new MessageA());
+        self::$container->get(MessageBusInterface::class)->dispatch($m2 = new MessageB());
+        self::$container->get(MessageBusInterface::class)->dispatch($m3 = new MessageA());
+
+        $messages = \array_map(fn(Envelope $envelope) => $envelope->getMessage(), \iterator_to_array($this->transport()->queue()));
+
+        $this->assertSame([$m1, $m2, $m3], $messages);
     }
 
     /**
@@ -251,17 +268,17 @@ final class InteractsWithQueueTest extends WebTestCase
         self::$container->get(MessageBusInterface::class)->dispatch($m1 = new MessageA(true));
         self::$container->get(MessageBusInterface::class)->dispatch($m2 = new MessageB());
 
-        $this->assertCount(2, $this->queue()->get());
-        $this->assertCount(2, $this->queue()->sent());
-        $this->assertCount(0, $this->queue()->acknowledged());
-        $this->assertCount(0, $this->queue()->rejected());
+        $this->assertCount(2, $this->transport()->queue());
+        $this->assertCount(2, $this->transport()->sent());
+        $this->assertCount(0, $this->transport()->acknowledged());
+        $this->assertCount(0, $this->transport()->rejected());
 
-        $this->queue()->process();
+        $this->transport()->process();
 
-        $this->assertCount(0, $this->queue()->get());
-        $this->assertCount(2, $this->queue()->sent());
-        $this->assertCount(1, $this->queue()->acknowledged());
-        $this->assertCount(1, $this->queue()->rejected());
+        $this->assertCount(0, $this->transport()->queue());
+        $this->assertCount(2, $this->transport()->sent());
+        $this->assertCount(1, $this->transport()->acknowledged());
+        $this->assertCount(1, $this->transport()->rejected());
     }
 
     /**
@@ -274,9 +291,9 @@ final class InteractsWithQueueTest extends WebTestCase
         self::$class = null;
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('Cannot access queue transport - is ZenstruckMessengerTestBundle enabled in your test environment?');
+        $this->expectExceptionMessage('Cannot access transport - is ZenstruckMessengerTestBundle enabled in your test environment?');
 
-        $this->queue();
+        $this->transport();
     }
 
     protected static function bootKernel(array $options = []): KernelInterface
