@@ -411,6 +411,22 @@ final class InteractsWithTransportTest extends WebTestCase
         $this->transport()->rejected()->assertCount(1);
     }
 
+    /**
+     * @test
+     */
+    public function can_reset_transport_data(): void
+    {
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        $this->transport()->queue()->assertNotEmpty();
+
+        $this->resetTransports();
+
+        $this->transport()->queue()->assertEmpty();
+    }
+
     protected static function bootKernel(array $options = []): KernelInterface
     {
         return parent::bootKernel(\array_merge(['environment' => 'single_transport'], $options));

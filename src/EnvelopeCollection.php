@@ -25,6 +25,13 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
         return $this->assertCount(0);
     }
 
+    public function assertNotEmpty(): self
+    {
+        PHPUnit::assertNotEmpty($this, 'Expected some messages but found none.');
+
+        return $this;
+    }
+
     public function assertCount(int $count): self
     {
         PHPUnit::assertCount($count, $this->envelopes, \sprintf('Expected %d messages, but %d messages found.', $count, \count($this->envelopes)));
