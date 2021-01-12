@@ -5,6 +5,7 @@ namespace Zenstruck\Messenger\Test\Transport;
 use PHPUnit\Framework\Assert as PHPUnit;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
@@ -18,9 +19,15 @@ use Zenstruck\Messenger\Test\EnvelopeCollection;
  */
 final class TestTransport implements TransportInterface, ResetInterface
 {
+    private const DEFAULT_OPTIONS = [
+        'intercept' => true,
+        'catch_exceptions' => true,
+    ];
+
     private MessageBusInterface $bus;
     private SerializerInterface $serializer;
     private bool $intercept;
+    private bool $catchExceptions;
 
     /** @var Envelope[] */
     private array $sent = [];
@@ -34,11 +41,14 @@ final class TestTransport implements TransportInterface, ResetInterface
     /** @var Envelope[] */
     private array $queue = [];
 
-    public function __construct(MessageBusInterface $bus, SerializerInterface $serializer, bool $intercept = true)
+    public function __construct(MessageBusInterface $bus, SerializerInterface $serializer, array $options = [])
     {
+        $options = \array_merge(self::DEFAULT_OPTIONS, $options);
+
         $this->bus = $bus;
         $this->serializer = $serializer;
-        $this->intercept = $intercept;
+        $this->intercept = $options['intercept'];
+        $this->catchExceptions = $options['catch_exceptions'];
     }
 
     /**
@@ -65,6 +75,20 @@ final class TestTransport implements TransportInterface, ResetInterface
         return $this;
     }
 
+    public function catchExceptions(): self
+    {
+        $this->catchExceptions = true;
+
+        return $this;
+    }
+
+    public function throwExceptions(): self
+    {
+        $this->catchExceptions = false;
+
+        return $this;
+    }
+
     /**
      * @param int|null $number int: the number of messages on the queue to process
      *                         null: process all messages on the queue
@@ -85,6 +109,12 @@ final class TestTransport implements TransportInterface, ResetInterface
 
         $eventDispatcher = new EventDispatcher();
         $eventDispatcher->addSubscriber(new StopWorkerOnMessageLimitListener($number));
+
+        if (!$this->catchExceptions) {
+            $eventDispatcher->addListener(WorkerMessageFailedEvent::class, function(WorkerMessageFailedEvent $event) {
+                throw $event->getThrowable();
+            });
+        }
 
         $worker = new Worker([$this], $this->bus, $eventDispatcher);
         $worker->run(['sleep' => 0]);

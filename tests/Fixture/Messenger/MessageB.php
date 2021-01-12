@@ -7,4 +7,10 @@ namespace Zenstruck\Messenger\Test\Tests\Fixture\Messenger;
  */
 final class MessageB
 {
+    public bool $fail;
+
+    public function __construct(bool $fail = false)
+    {
+        $this->fail = $fail;
+    }
 }

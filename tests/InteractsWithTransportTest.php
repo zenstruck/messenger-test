@@ -304,6 +304,67 @@ final class InteractsWithTransportTest extends WebTestCase
         $this->transport();
     }
 
+    /**
+     * @test
+     */
+    public function can_configure_throwing_exceptions(): void
+    {
+        self::bootKernel();
+
+        $this->transport()->throwExceptions();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('handling failed...');
+
+        $this->transport()->process();
+    }
+
+    /**
+     * @test
+     */
+    public function can_configure_throwing_exceptions_with_intercept_disabled(): void
+    {
+        self::bootKernel();
+
+        $this->transport()->throwExceptions()->unblock();
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('handling failed...');
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+    }
+
+    /**
+     * @test
+     */
+    public function can_disable_exception_catching_in_transport_config(): void
+    {
+        self::bootKernel(['environment' => 'multi_transport']);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('handling failed...');
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageB(true));
+    }
+
+    /**
+     * @test
+     */
+    public function can_re_enable_exception_catching_if_disabled_in_transport_config(): void
+    {
+        self::bootKernel(['environment' => 'multi_transport']);
+
+        $this->transport('async2')->catchExceptions();
+
+        $this->transport('async2')->rejected()->assertEmpty();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageB(true));
+
+        $this->transport('async2')->rejected()->assertCount(1);
+    }
+
     protected static function bootKernel(array $options = []): KernelInterface
     {
         return parent::bootKernel(\array_merge(['environment' => 'single_transport'], $options));

@@ -27,9 +27,7 @@ final class TestTransportFactory implements TransportFactoryInterface, ResetInte
 
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface
     {
-        ['intercept' => $intercept] = $this->parseDsn($dsn);
-
-        return $this->transports[] = new TestTransport($this->bus, $serializer, $intercept);
+        return $this->transports[] = new TestTransport($this->bus, $serializer, $this->parseDsn($dsn));
     }
 
     public function supports(string $dsn, array $options): bool
@@ -54,6 +52,7 @@ final class TestTransportFactory implements TransportFactoryInterface, ResetInte
 
         return [
             'intercept' => \filter_var($query['intercept'] ?? true, FILTER_VALIDATE_BOOLEAN),
+            'catch_exceptions' => \filter_var($query['catch_exceptions'] ?? true, FILTER_VALIDATE_BOOLEAN),
         ];
     }
 }

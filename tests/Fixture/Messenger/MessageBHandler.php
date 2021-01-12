@@ -13,6 +13,10 @@ final class MessageBHandler implements MessageHandlerInterface
 
     public function __invoke(MessageB $message): void
     {
+        if ($message->fail) {
+            throw new \RuntimeException('handling failed...');
+        }
+
         $this->messages[] = $message;
     }
 }

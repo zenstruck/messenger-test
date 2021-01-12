@@ -5,7 +5,7 @@ framework:
     messenger:
         transports:
             async1: test://
-            async2: test://?intercept=false
+            async2: test://?intercept=false&catch_exceptions=false
             async3: in-memory://
         routing:
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: [async1]
