@@ -41,6 +41,9 @@ final class TestTransport implements TransportInterface
     /** @var array<string, Envelope[]> */
     private static array $queue = [];
 
+    /**
+     * @internal
+     */
     public function __construct(string $name, MessageBusInterface $bus, SerializerInterface $serializer, array $options = [])
     {
         $options = \array_merge(self::DEFAULT_OPTIONS, $options);
