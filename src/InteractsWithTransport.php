@@ -11,7 +11,15 @@ use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
  */
 trait InteractsWithTransport
 {
-    final public function transport(?string $name = null): TestTransport
+    /**
+     * @after
+     */
+    final protected function resetTransports(): void
+    {
+        TestTransport::reset();
+    }
+
+    final protected function transport(?string $name = null): TestTransport
     {
         if (!$this instanceof KernelTestCase) {
             throw new \LogicException(\sprintf('The %s trait can only be used with %s.', __TRAIT__, KernelTestCase::class));

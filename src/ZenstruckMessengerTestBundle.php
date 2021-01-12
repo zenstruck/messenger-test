@@ -20,7 +20,6 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
     {
         $factory = (new Definition(TestTransportFactory::class, [new Reference('messenger.routable_message_bus')]))
             ->addTag('messenger.transport_factory')
-            ->addTag('kernel.reset', ['method' => 'reset'])
         ;
 
         $registry = (new Definition(TestTransportRegistry::class))

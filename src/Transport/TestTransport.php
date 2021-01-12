@@ -11,40 +11,41 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
-use Symfony\Contracts\Service\ResetInterface;
 use Zenstruck\Messenger\Test\EnvelopeCollection;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
-final class TestTransport implements TransportInterface, ResetInterface
+final class TestTransport implements TransportInterface
 {
     private const DEFAULT_OPTIONS = [
         'intercept' => true,
         'catch_exceptions' => true,
     ];
 
+    private string $name;
     private MessageBusInterface $bus;
     private SerializerInterface $serializer;
     private bool $intercept;
     private bool $catchExceptions;
 
-    /** @var Envelope[] */
-    private array $sent = [];
+    /** @var array<string, Envelope[]> */
+    private static array $sent = [];
 
-    /** @var Envelope[] */
-    private array $acknowledged = [];
+    /** @var array<string, Envelope[]> */
+    private static array $acknowledged = [];
 
-    /** @var Envelope[] */
-    private array $rejected = [];
+    /** @var array<string, Envelope[]> */
+    private static array $rejected = [];
 
-    /** @var Envelope[] */
-    private array $queue = [];
+    /** @var array<string, Envelope[]> */
+    private static array $queue = [];
 
-    public function __construct(MessageBusInterface $bus, SerializerInterface $serializer, array $options = [])
+    public function __construct(string $name, MessageBusInterface $bus, SerializerInterface $serializer, array $options = [])
     {
         $options = \array_merge(self::DEFAULT_OPTIONS, $options);
 
+        $this->name = $name;
         $this->bus = $bus;
         $this->serializer = $serializer;
         $this->intercept = $options['intercept'];
@@ -95,7 +96,7 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function process(?int $number = null): self
     {
-        $count = \count($this->queue);
+        $count = \count(self::$queue[$this->name] ?? []);
 
         if (null === $number) {
             return $this->process($count);
@@ -105,7 +106,7 @@ final class TestTransport implements TransportInterface, ResetInterface
             return $this;
         }
 
-        PHPUnit::assertGreaterThanOrEqual($number, \count($this->queue), "Tried to process {$number} queued messages but only {$count} are on in the queue.");
+        PHPUnit::assertGreaterThanOrEqual($number, $count, "Tried to process {$number} queued messages but only {$count} are on in the queue.");
 
         $eventDispatcher = new EventDispatcher();
         $eventDispatcher->addSubscriber(new StopWorkerOnMessageLimitListener($number));
@@ -124,22 +125,22 @@ final class TestTransport implements TransportInterface, ResetInterface
 
     public function queue(): EnvelopeCollection
     {
-        return new EnvelopeCollection(...\array_values($this->queue));
+        return new EnvelopeCollection(...\array_values(self::$queue[$this->name] ?? []));
     }
 
     public function sent(): EnvelopeCollection
     {
-        return new EnvelopeCollection(...$this->sent);
+        return new EnvelopeCollection(...self::$sent[$this->name] ?? []);
     }
 
     public function acknowledged(): EnvelopeCollection
     {
-        return new EnvelopeCollection(...$this->acknowledged);
+        return new EnvelopeCollection(...self::$acknowledged[$this->name] ?? []);
     }
 
     public function rejected(): EnvelopeCollection
     {
-        return new EnvelopeCollection(...$this->rejected);
+        return new EnvelopeCollection(...self::$rejected[$this->name] ?? []);
     }
 
     /**
@@ -147,7 +148,7 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function get(): iterable
     {
-        return \array_values($this->queue);
+        return \array_values(self::$queue[$this->name] ?? []);
     }
 
     /**
@@ -155,8 +156,8 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function ack(Envelope $envelope): void
     {
-        $this->acknowledged[] = $envelope;
-        unset($this->queue[\spl_object_hash($envelope->getMessage())]);
+        self::$acknowledged[$this->name][] = $envelope;
+        unset(self::$queue[$this->name][\spl_object_hash($envelope->getMessage())]);
     }
 
     /**
@@ -164,8 +165,8 @@ final class TestTransport implements TransportInterface, ResetInterface
      */
     public function reject(Envelope $envelope): void
     {
-        $this->rejected[] = $envelope;
-        unset($this->queue[\spl_object_hash($envelope->getMessage())]);
+        self::$rejected[$this->name][] = $envelope;
+        unset(self::$queue[$this->name][\spl_object_hash($envelope->getMessage())]);
     }
 
     /**
@@ -176,8 +177,8 @@ final class TestTransport implements TransportInterface, ResetInterface
         // ensure serialization works (todo configurable? better error on failure?)
         $this->serializer->decode($this->serializer->encode($envelope));
 
-        $this->sent[] = $envelope;
-        $this->queue[\spl_object_hash($envelope->getMessage())] = $envelope;
+        self::$sent[$this->name][] = $envelope;
+        self::$queue[$this->name][\spl_object_hash($envelope->getMessage())] = $envelope;
 
         if (!$this->intercept) {
             $this->process();
@@ -186,11 +187,8 @@ final class TestTransport implements TransportInterface, ResetInterface
         return $envelope;
     }
 
-    /**
-     * @internal
-     */
-    public function reset(): void
+    public static function reset(): void
     {
-        $this->sent = $this->queue = $this->rejected = $this->acknowledged = [];
+        self::$queue = self::$sent = self::$acknowledged = self::$rejected = [];
     }
 }

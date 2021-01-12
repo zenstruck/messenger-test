@@ -365,6 +365,52 @@ final class InteractsWithTransportTest extends WebTestCase
         $this->transport('async2')->rejected()->assertCount(1);
     }
 
+    /**
+     * @test
+     */
+    public function transport_data_is_persisted_between_requests_and_kernel_shutdown(): void
+    {
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->transport()->queue()->assertCount(2);
+
+        self::ensureKernelShutdown();
+        self::bootKernel();
+
+        $this->transport()->queue()->assertCount(2);
+
+        $this->transport()->process();
+
+        self::ensureKernelShutdown();
+        self::bootKernel();
+
+        $this->transport()->queue()->assertEmpty();
+        $this->transport()->sent()->assertCount(2);
+        $this->transport()->acknowledged()->assertCount(1);
+        $this->transport()->rejected()->assertCount(1);
+
+        self::ensureKernelShutdown();
+
+        $client = self::createClient();
+
+        $client->request('GET', '/dispatch');
+
+        $this->transport()->queue()->assertCount(1);
+        $this->transport()->sent()->assertCount(3);
+        $this->transport()->acknowledged()->assertCount(1);
+        $this->transport()->rejected()->assertCount(1);
+
+        $client->request('GET', '/dispatch');
+
+        $this->transport()->queue()->assertCount(2);
+        $this->transport()->sent()->assertCount(4);
+        $this->transport()->acknowledged()->assertCount(1);
+        $this->transport()->rejected()->assertCount(1);
+    }
+
     protected static function bootKernel(array $options = []): KernelInterface
     {
         return parent::bootKernel(\array_merge(['environment' => 'single_transport'], $options));

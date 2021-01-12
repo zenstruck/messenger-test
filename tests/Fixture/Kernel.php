@@ -9,6 +9,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\Component\Routing\RouteCollectionBuilder;
+use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA;
 use Zenstruck\Messenger\Test\ZenstruckMessengerTestBundle;
 
 /**
@@ -20,6 +21,8 @@ class Kernel extends BaseKernel
 
     public function dispatch(): Response
     {
+        $this->getContainer()->get('message_bus')->dispatch(new MessageA());
+
         return new Response();
     }
 
