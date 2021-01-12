@@ -2,7 +2,7 @@
     "name": "zenstruck/messenger-test",
     "description": "Assertions and helpers for testing your symfony/messenger queues.",
     "homepage": "https://github.com/zenstruck/messenger-test",
-    "type": "library",
+    "type": "symfony-bundle",
     "license": "MIT",
     "keywords": ["messenger", "symfony", "test", "queue"],
     "authors": [
