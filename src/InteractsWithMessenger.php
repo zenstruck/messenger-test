@@ -9,7 +9,7 @@ use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
-trait InteractsWithTransport
+trait InteractsWithMessenger
 {
     /**
      * @after

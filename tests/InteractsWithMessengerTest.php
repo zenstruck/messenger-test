@@ -6,7 +6,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Zenstruck\Messenger\Test\InteractsWithTransport;
+use Zenstruck\Messenger\Test\InteractsWithMessenger;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageAHandler;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageB;
@@ -17,9 +17,9 @@ use Zenstruck\Messenger\Test\Tests\Fixture\NoBundleKernel;
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
-final class InteractsWithTransportTest extends WebTestCase
+final class InteractsWithMessengerTest extends WebTestCase
 {
-    use InteractsWithTransport;
+    use InteractsWithMessenger;
 
     /**
      * @test

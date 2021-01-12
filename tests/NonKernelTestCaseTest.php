@@ -3,14 +3,14 @@
 namespace Zenstruck\Messenger\Test\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Zenstruck\Messenger\Test\InteractsWithTransport;
+use Zenstruck\Messenger\Test\InteractsWithMessenger;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
 final class NonKernelTestCaseTest extends TestCase
 {
-    use InteractsWithTransport;
+    use InteractsWithMessenger;
 
     /**
      * @test
