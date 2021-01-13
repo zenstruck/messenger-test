@@ -7,7 +7,8 @@
 Assertions and helpers for testing your `symfony/messenger` queues.
 
 This library provides a `TestTransport` that, by default, intercepts any messages
-sent to it. You can then inspect and assert against these messages.
+sent to it. You can then inspect and assert against these messages. Sent messages
+are serialized and unserialized as an added check.
 
 The transport also allows for processing these *queued* messages.
 
