@@ -26,7 +26,7 @@ trait InteractsWithMessenger
         }
 
         if (!self::$container) {
-            throw new \LogicException('The kernel must be booted before accessing the messenger transports.');
+            self::bootKernel();
         }
 
         if (!self::$container->has(TestTransportRegistry::class)) {

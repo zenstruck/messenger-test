@@ -49,8 +49,6 @@ class MyTest extends KernelTestCase // or WebTestCase
 
     public function test_something(): void
     {
-        self::bootKernel(); // kernel must be booted before interacting
-        
         // ...some code that routes messages to your configured transport
 
         // assert against the queue
@@ -81,8 +79,6 @@ class MyTest extends KernelTestCase // or WebTestCase
 
     public function test_something(): void
     {
-        self::bootKernel(); // kernel must be booted before interacting
-        
         // ...some code that routes messages to your configured transport
 
         // let's assume 3 messages are on this queue
@@ -111,8 +107,6 @@ class MyTest extends KernelTestCase // or WebTestCase
 
     public function test_something(): void
     {
-        self::bootKernel(); // kernel must be booted before interacting
-        
         // ...some code that routes messages to your configured transport
 
         // assert against the sent messages
@@ -159,8 +153,6 @@ class MyTest extends KernelTestCase // or WebTestCase
 
     public function test_something(): void
     {
-        self::bootKernel(); // kernel must be booted before interacting
-        
         // ...some code that routes messages to your configured transport
 
         // disable exception catching
@@ -202,8 +194,6 @@ class MyTest extends KernelTestCase // or WebTestCase
 
     public function test_something(): void
     {
-        self::bootKernel(); // kernel must be booted before interacting
-
         // disable intercept
         $this->transport()->unblock();
 
@@ -259,8 +249,6 @@ class MyTest extends KernelTestCase // or WebTestCase
 
     public function test_something(): void
     {
-        self::bootKernel(); // kernel must be booted before interacting
-
         $this->transport('high')->queue();
         $this->transport('low')->sent();
     }

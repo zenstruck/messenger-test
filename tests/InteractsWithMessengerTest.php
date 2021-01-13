@@ -127,12 +127,9 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
-    public function cannot_access_queue_if_kernel_not_booted(): void
+    public function accessing_transport_boots_kernel_if_not_yet_booted(): void
     {
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('kernel must be booted');
-
-        $this->transport();
+        $this->transport()->queue()->assertEmpty();
     }
 
     /**
