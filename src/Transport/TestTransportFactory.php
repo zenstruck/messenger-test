@@ -40,8 +40,8 @@ final class TestTransportFactory implements TransportFactoryInterface
         }
 
         return [
-            'intercept' => \filter_var($query['intercept'] ?? true, FILTER_VALIDATE_BOOLEAN),
-            'catch_exceptions' => \filter_var($query['catch_exceptions'] ?? true, FILTER_VALIDATE_BOOLEAN),
+            'intercept' => \filter_var($query['intercept'] ?? true, \FILTER_VALIDATE_BOOLEAN),
+            'catch_exceptions' => \filter_var($query['catch_exceptions'] ?? true, \FILTER_VALIDATE_BOOLEAN),
         ];
     }
 }
