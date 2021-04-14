@@ -62,6 +62,30 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
     }
 
     /**
+     * @param string|callable|null $filter
+     */
+    public function first($filter = null): Envelope
+    {
+        if (null === $filter) {
+            // just the first envelope
+            return $this->first(fn() => true);
+        }
+
+        if (!\is_callable($filter)) {
+            // first envelope for message class
+            return $this->first(fn(Envelope $e) => $filter === \get_class($e->getMessage()));
+        }
+
+        foreach ($this->envelopes as $envelope) {
+            if ($filter($envelope)) {
+                return $envelope;
+            }
+        }
+
+        throw new \RuntimeException('No envelopes found.');
+    }
+
+    /**
      * The messages extracted from envelopes.
      *
      * @param string|null $class Only messages of this class

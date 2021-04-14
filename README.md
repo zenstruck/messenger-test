@@ -99,6 +99,7 @@ class MyTest extends KernelTestCase // or WebTestCase
 
 ```php
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Messenger\Envelope;
 use Zenstruck\Messenger\Test\InteractsWithMessenger;
 
 class MyTest extends KernelTestCase // or WebTestCase
@@ -129,7 +130,14 @@ class MyTest extends KernelTestCase // or WebTestCase
         $queue->count(); // number of envelopes
         $queue->all(); // Envelope[]
         $queue->messages(); // object[] the messages unwrapped from their envelope
-        $queue->messages(MyMessage::class); // MyMessage[] just instances of the passed message class 
+        $queue->messages(MyMessage::class); // MyMessage[] just instances of the passed message class
+
+        // get specific envelope
+        $queue->first(); // Envelope - first one on the collection
+        $queue->first(MyMessage::class); // Envelope - first where message class is MyMessage
+        $queue->first(function(Envelope $e) {
+            return $e->getMessage() instanceof MyMessage && $e->getMessage()->isSomething();
+        }); // Envelope - first that matches the filter callback
     }
 }
 ```

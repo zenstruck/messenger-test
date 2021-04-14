@@ -114,6 +114,36 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
+    public function can_access_envelope_collection_items_via_first(): void
+    {
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch($m1 = new MessageA());
+        self::$container->get(MessageBusInterface::class)->dispatch($m2 = new MessageB());
+        self::$container->get(MessageBusInterface::class)->dispatch($m3 = new MessageA(true));
+
+        $this->messenger()->queue()->assertCount(3);
+
+        $this->assertSame($m1, $this->messenger()->queue()->first()->getMessage());
+        $this->assertSame($m2, $this->messenger()->queue()->first(MessageB::class)->getMessage());
+        $this->assertSame($m3, $this->messenger()->queue()->first(fn(Envelope $e) => $e->getMessage()->fail)->getMessage());
+    }
+
+    /**
+     * @test
+     */
+    public function envelope_collection_first_throws_exception_if_no_match(): void
+    {
+        self::bootKernel();
+
+        $this->expectException(\RuntimeException::class);
+
+        $this->messenger()->queue()->first();
+    }
+
+    /**
+     * @test
+     */
     public function cannot_access_queue_if_none_registered(): void
     {
         self::bootKernel(['environment' => 'test']);
