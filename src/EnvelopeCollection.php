@@ -79,6 +79,14 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
         return \array_values(\array_filter($messages, static fn(object $message) => $class === \get_class($message)));
     }
 
+    /**
+     * @return Envelope[]
+     */
+    public function all(): array
+    {
+        return $this->envelopes;
+    }
+
     public function getIterator(): \Iterator
     {
         return new \ArrayIterator($this->envelopes);

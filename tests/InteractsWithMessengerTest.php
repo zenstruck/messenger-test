@@ -250,7 +250,7 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
-    public function can_access_envelopes_on_queue(): void
+    public function can_access_envelopes_on_envelope_collection(): void
     {
         self::bootKernel();
 
@@ -258,9 +258,11 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::$container->get(MessageBusInterface::class)->dispatch($m2 = new MessageB());
         self::$container->get(MessageBusInterface::class)->dispatch($m3 = new MessageA());
 
-        $messages = \array_map(fn(Envelope $envelope) => $envelope->getMessage(), \iterator_to_array($this->messenger()->queue()));
+        $messages = \array_map(fn(Envelope $envelope) => $envelope->getMessage(), $this->messenger()->queue()->all());
+        $messagesFromIterator = \array_map(fn(Envelope $envelope) => $envelope->getMessage(), \iterator_to_array($this->messenger()->queue()));
 
         $this->assertSame([$m1, $m2, $m3], $messages);
+        $this->assertSame([$m1, $m2, $m3], $messagesFromIterator);
     }
 
     /**
