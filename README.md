@@ -95,7 +95,7 @@ class MyTest extends KernelTestCase // or WebTestCase
 }
 ```
 
-### Other Transport Assertions
+### Other Transport Assertions and Helpers
 
 ```php
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -109,31 +109,27 @@ class MyTest extends KernelTestCase // or WebTestCase
     {
         // ...some code that routes messages to your configured transport
 
-        // assert against the sent messages
-        $this->messenger()->sent()->assertEmpty(); 
-        $this->messenger()->sent()->assertNotEmpty(); 
-        $this->messenger()->sent()->assertCount(3);
-        $this->messenger()->sent()->assertContains(MyMessage::class); // contains this message
-        $this->messenger()->sent()->assertContains(MyMessage::class, 3); // contains this message 3 times
-        $this->messenger()->sent()->assertNotContains(MyMessage::class); // not contains this message
+        $queue = $this->messenger()->queued();
+        $sent = $this->messenger()->sent();
+        $acknowledged = $this->messenger()->acknowledged(); // messages successfully processed
+        $rejected = $this->messenger()->rejected(); // messages not successfully processed
 
-        // assert against the acknowledged messages
-        // these are messages that were successfully processed
-        $this->messenger()->acknowledged()->assertEmpty(); 
-        $this->messenger()->acknowledged()->assertNotEmpty(); 
-        $this->messenger()->acknowledged()->assertCount(3);
-        $this->messenger()->acknowledged()->assertContains(MyMessage::class); // contains this message
-        $this->messenger()->acknowledged()->assertContains(MyMessage::class, 3); // contains this message 3 times
-        $this->messenger()->acknowledged()->assertNotContains(MyMessage::class); // not contains this message
+        // the 4 above variables are all instances of Zenstruck\Messenger\Test\EnvelopeCollection
+        // which is a countable iterator with the following api (using $queue for the example)
 
-        // assert against the rejected messages
-        // these are messages were not successfully processed
-        $this->messenger()->rejected()->assertEmpty(); 
-        $this->messenger()->rejected()->assertNotEmpty(); 
-        $this->messenger()->rejected()->assertCount(3);
-        $this->messenger()->rejected()->assertContains(MyMessage::class); // contains this message
-        $this->messenger()->rejected()->assertContains(MyMessage::class, 3); // contains this message 3 times
-        $this->messenger()->rejected()->assertNotContains(MyMessage::class); // not contains this message
+        // collection assertions
+        $queue->assertEmpty();
+        $queue->assertNotEmpty();
+        $queue->assertCount(3);
+        $queue->assertContains(MyMessage::class); // contains this message
+        $queue->assertContains(MyMessage::class, 3); // contains this message 3 times
+        $queue->assertNotContains(MyMessage::class); // not contains this message
+
+        // helpers
+        $queue->count(); // number of envelopes
+        $queue->all(); // Envelope[]
+        $queue->messages(); // object[] the messages unwrapped from their envelope
+        $queue->messages(MyMessage::class); // MyMessage[] just instances of the passed message class 
     }
 }
 ```
