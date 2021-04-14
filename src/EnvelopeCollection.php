@@ -64,7 +64,7 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
     /**
      * @param string|callable|null $filter
      */
-    public function first($filter = null): Envelope
+    public function first($filter = null): TestEnvelope
     {
         if (null === $filter) {
             // just the first envelope
@@ -78,7 +78,7 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
 
         foreach ($this->envelopes as $envelope) {
             if ($filter($envelope)) {
-                return $envelope;
+                return new TestEnvelope($envelope);
             }
         }
 
@@ -104,16 +104,18 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
     }
 
     /**
-     * @return Envelope[]
+     * @return TestEnvelope[]
      */
     public function all(): array
     {
-        return $this->envelopes;
+        return \iterator_to_array($this);
     }
 
     public function getIterator(): \Iterator
     {
-        return new \ArrayIterator($this->envelopes);
+        foreach ($this->envelopes as $envelope) {
+            yield new TestEnvelope($envelope);
+        }
     }
 
     public function count(): int

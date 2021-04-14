@@ -100,6 +100,7 @@ class MyTest extends KernelTestCase // or WebTestCase
 ```php
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Zenstruck\Messenger\Test\InteractsWithMessenger;
 
 class MyTest extends KernelTestCase // or WebTestCase
@@ -115,8 +116,10 @@ class MyTest extends KernelTestCase // or WebTestCase
         $acknowledged = $this->messenger()->acknowledged(); // messages successfully processed
         $rejected = $this->messenger()->rejected(); // messages not successfully processed
 
-        // the 4 above variables are all instances of Zenstruck\Messenger\Test\EnvelopeCollection
-        // which is a countable iterator with the following api (using $queue for the example)
+        // The 4 above variables are all instances of Zenstruck\Messenger\Test\EnvelopeCollection
+        // which is a countable iterator with the following api (using $queue for the example).
+        // Methods that return Envelope(s) actually return TestEnvelope(s) which is an Envelope
+        // decorator (all standard Envelope methods can be used) with some stamp-related assertions.
 
         // collection assertions
         $queue->assertEmpty();
@@ -128,16 +131,20 @@ class MyTest extends KernelTestCase // or WebTestCase
 
         // helpers
         $queue->count(); // number of envelopes
-        $queue->all(); // Envelope[]
+        $queue->all(); // TestEnvelope[]
         $queue->messages(); // object[] the messages unwrapped from their envelope
         $queue->messages(MyMessage::class); // MyMessage[] just instances of the passed message class
 
         // get specific envelope
-        $queue->first(); // Envelope - first one on the collection
-        $queue->first(MyMessage::class); // Envelope - first where message class is MyMessage
+        $queue->first(); // TestEnvelope - first one on the collection
+        $queue->first(MyMessage::class); // TestEnvelope - first where message class is MyMessage
         $queue->first(function(Envelope $e) {
             return $e->getMessage() instanceof MyMessage && $e->getMessage()->isSomething();
-        }); // Envelope - first that matches the filter callback
+        }); // TestEnvelope - first that matches the filter callback
+        
+        // TestEnvelope stamp assertions
+        $queue->first()->assertHasStamp(DelayStamp::class);
+        $queue->first()->assertNotHasStamp(DelayStamp::class);
     }
 }
 ```
