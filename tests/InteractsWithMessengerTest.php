@@ -129,6 +129,8 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertSame($m1, $this->messenger()->queue()->first()->getMessage());
         $this->assertSame($m2, $this->messenger()->queue()->first(MessageB::class)->getMessage());
         $this->assertSame($m3, $this->messenger()->queue()->first(fn(Envelope $e) => $e->getMessage()->fail)->getMessage());
+        $this->assertSame($m3, $this->messenger()->queue()->first(fn($e) => $e->getMessage()->fail)->getMessage());
+        $this->assertSame($m3, $this->messenger()->queue()->first(fn(MessageA $m) => $m->fail)->getMessage());
     }
 
     /**

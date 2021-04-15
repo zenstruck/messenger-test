@@ -76,6 +76,8 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
             return $this->first(fn(Envelope $e) => $filter === \get_class($e->getMessage()));
         }
 
+        $filter = self::normalizeFilter($filter);
+
         foreach ($this->envelopes as $envelope) {
             if ($filter($envelope)) {
                 return new TestEnvelope($envelope);
@@ -121,5 +123,31 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
     public function count(): int
     {
         return \count($this->envelopes);
+    }
+
+    private static function normalizeFilter(callable $filter): callable
+    {
+        $function = new \ReflectionFunction(\Closure::fromCallable($filter));
+
+        if (!$parameter = $function->getParameters()[0] ?? null) {
+            return $filter;
+        }
+
+        if (!$type = $parameter->getType()) {
+            return $filter;
+        }
+
+        if (!$type instanceof \ReflectionNamedType || $type->isBuiltin() || Envelope::class === $type->getName()) {
+            return $filter;
+        }
+
+        // user used message class name as type-hint
+        return function(Envelope $envelope) use ($filter, $type) {
+            if ($type->getName() !== \get_class($envelope->getMessage())) {
+                return false;
+            }
+
+            return $filter($envelope->getMessage());
+        };
     }
 }

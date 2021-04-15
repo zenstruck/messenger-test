@@ -141,7 +141,11 @@ class MyTest extends KernelTestCase // or WebTestCase
         $queue->first(function(Envelope $e) {
             return $e->getMessage() instanceof MyMessage && $e->getMessage()->isSomething();
         }); // TestEnvelope - first that matches the filter callback
-        
+
+        // Equivalent to above - use the message class as the filter function typehint to
+        // auto-filter to this message type.
+        $queue->first(fn(MyMessage $m) => $m->isSomething()); // TestEnvelope
+
         // TestEnvelope stamp assertions
         $queue->first()->assertHasStamp(DelayStamp::class);
         $queue->first()->assertNotHasStamp(DelayStamp::class);
