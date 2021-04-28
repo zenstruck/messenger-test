@@ -4,6 +4,7 @@ namespace Zenstruck\Messenger\Test;
 
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Zenstruck\Messenger\Test\Transport\TestTransport;
+use Zenstruck\Messenger\Test\Transport\TestTransportFactory;
 use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
 
 /**
@@ -12,11 +13,12 @@ use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
 trait InteractsWithMessenger
 {
     /**
+     * @internal
      * @after
      */
-    final protected function resetTransports(): void
+    final protected function _resetTransports(): void
     {
-        TestTransport::reset();
+        TestTransportFactory::reset();
     }
 
     final protected function messenger(?string $transport = null): TestTransport
