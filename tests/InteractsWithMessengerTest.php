@@ -116,6 +116,29 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
+    public function disabling_intercept_is_remembered_between_kernel_reboots(): void
+    {
+        self::bootKernel();
+
+        $this->messenger()->unblock();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->messenger()->sent()->assertCount(1);
+
+        self::ensureKernelShutdown();
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->messenger()->sent()->assertCount(2);
+    }
+
+    /**
+     * @test
+     */
     public function can_access_envelope_collection_items_via_first(): void
     {
         self::bootKernel();
@@ -410,6 +433,26 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::$container->get(MessageBusInterface::class)->dispatch(new MessageB(true));
 
         $this->messenger('async2')->rejected()->assertCount(1);
+    }
+
+    /**
+     * @test
+     */
+    public function throwing_exceptions_is_remembered_between_kernel_reboots(): void
+    {
+        self::bootKernel();
+
+        $this->messenger()->throwExceptions();
+
+        self::ensureKernelShutdown();
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectErrorMessage('handling failed...');
+
+        $this->messenger()->process();
     }
 
     /**

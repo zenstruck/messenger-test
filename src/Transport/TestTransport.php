@@ -41,10 +41,10 @@ final class TestTransport implements TransportInterface
     /** @var array<string, Envelope[]> */
     private static array $queue = [];
 
-    /**
-     * @internal
-     */
-    public function __construct(string $name, MessageBusInterface $bus, SerializerInterface $serializer, array $options = [])
+    /** @var array<string, self> */
+    private static array $transports = [];
+
+    private function __construct(string $name, MessageBusInterface $bus, SerializerInterface $serializer, array $options = [])
     {
         $options = \array_merge(self::DEFAULT_OPTIONS, $options);
 
@@ -53,6 +53,14 @@ final class TestTransport implements TransportInterface
         $this->serializer = $serializer;
         $this->intercept = $options['intercept'];
         $this->catchExceptions = $options['catch_exceptions'];
+    }
+
+    /**
+     * @internal
+     */
+    public static function create(string $name, MessageBusInterface $bus, SerializerInterface $serializer, array $options = []): self
+    {
+        return self::$transports[$name] ??= new self($name, $bus, $serializer, $options);
     }
 
     /**
@@ -192,6 +200,6 @@ final class TestTransport implements TransportInterface
 
     public static function reset(): void
     {
-        self::$queue = self::$sent = self::$acknowledged = self::$rejected = [];
+        self::$transports = self::$queue = self::$sent = self::$acknowledged = self::$rejected = [];
     }
 }

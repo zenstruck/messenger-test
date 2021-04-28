@@ -23,7 +23,7 @@ final class TestTransportFactory implements TransportFactoryInterface
 
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface
     {
-        return new TestTransport($options['transport_name'], $this->bus, $serializer, $this->parseDsn($dsn));
+        return TestTransport::create($options['transport_name'], $this->bus, $serializer, $this->parseDsn($dsn));
     }
 
     public function supports(string $dsn, array $options): bool
