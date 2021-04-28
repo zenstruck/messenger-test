@@ -62,6 +62,32 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
     }
 
     /**
+     * @param string|callable|null $filter
+     */
+    public function first($filter = null): TestEnvelope
+    {
+        if (null === $filter) {
+            // just the first envelope
+            return $this->first(fn() => true);
+        }
+
+        if (!\is_callable($filter)) {
+            // first envelope for message class
+            return $this->first(fn(Envelope $e) => $filter === \get_class($e->getMessage()));
+        }
+
+        $filter = self::normalizeFilter($filter);
+
+        foreach ($this->envelopes as $envelope) {
+            if ($filter($envelope)) {
+                return new TestEnvelope($envelope);
+            }
+        }
+
+        throw new \RuntimeException('No envelopes found.');
+    }
+
+    /**
      * The messages extracted from envelopes.
      *
      * @param string|null $class Only messages of this class
@@ -79,13 +105,49 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
         return \array_values(\array_filter($messages, static fn(object $message) => $class === \get_class($message)));
     }
 
+    /**
+     * @return TestEnvelope[]
+     */
+    public function all(): array
+    {
+        return \iterator_to_array($this);
+    }
+
     public function getIterator(): \Iterator
     {
-        return new \ArrayIterator($this->envelopes);
+        foreach ($this->envelopes as $envelope) {
+            yield new TestEnvelope($envelope);
+        }
     }
 
     public function count(): int
     {
         return \count($this->envelopes);
+    }
+
+    private static function normalizeFilter(callable $filter): callable
+    {
+        $function = new \ReflectionFunction(\Closure::fromCallable($filter));
+
+        if (!$parameter = $function->getParameters()[0] ?? null) {
+            return $filter;
+        }
+
+        if (!$type = $parameter->getType()) {
+            return $filter;
+        }
+
+        if (!$type instanceof \ReflectionNamedType || $type->isBuiltin() || Envelope::class === $type->getName()) {
+            return $filter;
+        }
+
+        // user used message class name as type-hint
+        return function(Envelope $envelope) use ($filter, $type) {
+            if ($type->getName() !== \get_class($envelope->getMessage())) {
+                return false;
+            }
+
+            return $filter($envelope->getMessage());
+        };
     }
 }

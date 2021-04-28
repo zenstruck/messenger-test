@@ -6,7 +6,9 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Zenstruck\Messenger\Test\InteractsWithMessenger;
+use Zenstruck\Messenger\Test\TestEnvelope;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageAHandler;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageB;
@@ -109,6 +111,52 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->messenger()->queue()->assertEmpty();
         $this->assertCount(2, self::$container->get(MessageAHandler::class)->messages);
         $this->assertCount(1, self::$container->get(MessageBHandler::class)->messages);
+    }
+
+    /**
+     * @test
+     */
+    public function can_access_envelope_collection_items_via_first(): void
+    {
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch($m1 = new MessageA());
+        self::$container->get(MessageBusInterface::class)->dispatch($m2 = new MessageB());
+        self::$container->get(MessageBusInterface::class)->dispatch($m3 = new MessageA(true));
+
+        $this->messenger()->queue()->assertCount(3);
+
+        $this->assertSame($m1, $this->messenger()->queue()->first()->getMessage());
+        $this->assertSame($m2, $this->messenger()->queue()->first(MessageB::class)->getMessage());
+        $this->assertSame($m3, $this->messenger()->queue()->first(fn(Envelope $e) => $e->getMessage()->fail)->getMessage());
+        $this->assertSame($m3, $this->messenger()->queue()->first(fn($e) => $e->getMessage()->fail)->getMessage());
+        $this->assertSame($m3, $this->messenger()->queue()->first(fn(MessageA $m) => $m->fail)->getMessage());
+    }
+
+    /**
+     * @test
+     */
+    public function envelope_collection_first_throws_exception_if_no_match(): void
+    {
+        self::bootKernel();
+
+        $this->expectException(\RuntimeException::class);
+
+        $this->messenger()->queue()->first();
+    }
+
+    /**
+     * @test
+     */
+    public function can_make_stamp_assertions_on_test_envelope(): void
+    {
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA(), [new DelayStamp(1000)]);
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageB());
+
+        $this->messenger()->queue()->first()->assertHasStamp(DelayStamp::class);
+        $this->messenger()->queue()->first(MessageB::class)->assertNotHasStamp(DelayStamp::class);
     }
 
     /**
@@ -250,7 +298,7 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
-    public function can_access_envelopes_on_queue(): void
+    public function can_access_envelopes_on_envelope_collection(): void
     {
         self::bootKernel();
 
@@ -258,9 +306,11 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::$container->get(MessageBusInterface::class)->dispatch($m2 = new MessageB());
         self::$container->get(MessageBusInterface::class)->dispatch($m3 = new MessageA());
 
-        $messages = \array_map(fn(Envelope $envelope) => $envelope->getMessage(), \iterator_to_array($this->messenger()->queue()));
+        $messages = \array_map(fn(TestEnvelope $envelope) => $envelope->getMessage(), $this->messenger()->queue()->all());
+        $messagesFromIterator = \array_map(fn(TestEnvelope $envelope) => $envelope->getMessage(), \iterator_to_array($this->messenger()->queue()));
 
         $this->assertSame([$m1, $m2, $m3], $messages);
+        $this->assertSame([$m1, $m2, $m3], $messagesFromIterator);
     }
 
     /**
