@@ -12,11 +12,12 @@ use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
 trait InteractsWithMessenger
 {
     /**
+     * @internal
      * @after
      */
-    final protected function resetTransports(): void
+    final protected static function _resetMessengerTransports(): void
     {
-        TestTransport::reset();
+        TestTransport::resetAll();
     }
 
     final protected function messenger(?string $transport = null): TestTransport

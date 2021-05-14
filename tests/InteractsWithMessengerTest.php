@@ -469,7 +469,7 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         $this->messenger()->queue()->assertNotEmpty();
 
-        $this->resetTransports();
+        $this->messenger()->reset();
 
         $this->messenger()->queue()->assertEmpty();
     }

@@ -26,8 +26,12 @@ final class TestTransport implements TransportInterface
     private string $name;
     private MessageBusInterface $bus;
     private SerializerInterface $serializer;
-    private bool $intercept;
-    private bool $catchExceptions;
+
+    /** @var array<string, bool> */
+    private static array $intercept = [];
+
+    /** @var array<string, bool> */
+    private static array $catchExceptions = [];
 
     /** @var array<string, Envelope[]> */
     private static array $sent = [];
@@ -51,8 +55,9 @@ final class TestTransport implements TransportInterface
         $this->name = $name;
         $this->bus = $bus;
         $this->serializer = $serializer;
-        $this->intercept = $options['intercept'];
-        $this->catchExceptions = $options['catch_exceptions'];
+
+        self::$intercept[$name] ??= $options['intercept'];
+        self::$catchExceptions[$name] ??= $options['catch_exceptions'];
     }
 
     /**
@@ -64,7 +69,7 @@ final class TestTransport implements TransportInterface
         // process any messages currently on queue
         $this->process();
 
-        $this->intercept = false;
+        self::$intercept[$this->name] = false;
 
         return $this;
     }
@@ -74,21 +79,21 @@ final class TestTransport implements TransportInterface
      */
     public function intercept(): self
     {
-        $this->intercept = true;
+        self::$intercept[$this->name] = true;
 
         return $this;
     }
 
     public function catchExceptions(): self
     {
-        $this->catchExceptions = true;
+        self::$catchExceptions[$this->name] = true;
 
         return $this;
     }
 
     public function throwExceptions(): self
     {
-        $this->catchExceptions = false;
+        self::$catchExceptions[$this->name] = false;
 
         return $this;
     }
@@ -114,7 +119,7 @@ final class TestTransport implements TransportInterface
         $eventDispatcher = new EventDispatcher();
         $eventDispatcher->addSubscriber(new StopWorkerOnMessageLimitListener($number));
 
-        if (!$this->catchExceptions) {
+        if (!$this->isCatchingExceptions()) {
             $eventDispatcher->addListener(WorkerMessageFailedEvent::class, function(WorkerMessageFailedEvent $event) {
                 throw $event->getThrowable();
             });
@@ -183,15 +188,36 @@ final class TestTransport implements TransportInterface
         self::$sent[$this->name][] = $envelope;
         self::$queue[$this->name][\spl_object_hash($envelope->getMessage())] = $envelope;
 
-        if (!$this->intercept) {
+        if (!$this->isIntercepting()) {
             $this->process();
         }
 
         return $envelope;
     }
 
-    public static function reset(): void
+    /**
+     * Resets all the data for this transport.
+     */
+    public function reset(): void
     {
-        self::$queue = self::$sent = self::$acknowledged = self::$rejected = [];
+        self::$queue[$this->name] = self::$sent[$this->name] = self::$acknowledged[$this->name] = self::$rejected[$this->name] = [];
+    }
+
+    /**
+     * Resets data and options for all transports.
+     */
+    public static function resetAll(): void
+    {
+        self::$queue = self::$sent = self::$acknowledged = self::$rejected = self::$intercept = self::$catchExceptions = [];
+    }
+
+    private function isIntercepting(): bool
+    {
+        return self::$intercept[$this->name];
+    }
+
+    private function isCatchingExceptions(): bool
+    {
+        return self::$catchExceptions[$this->name];
     }
 }
