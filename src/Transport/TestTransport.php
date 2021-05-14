@@ -23,34 +23,41 @@ final class TestTransport implements TransportInterface
         'catch_exceptions' => true,
     ];
 
+    private string $name;
     private MessageBusInterface $bus;
     private SerializerInterface $serializer;
-    private bool $intercept;
-    private bool $catchExceptions;
 
-    /** @var Envelope[] */
-    private array $sent = [];
+    /** @var array<string, bool> */
+    private static array $intercept = [];
 
-    /** @var Envelope[] */
-    private array $acknowledged = [];
+    /** @var array<string, bool> */
+    private static array $catchExceptions = [];
 
-    /** @var Envelope[] */
-    private array $rejected = [];
+    /** @var array<string, Envelope[]> */
+    private static array $sent = [];
 
-    /** @var array<string, Envelope> */
-    private array $queue = [];
+    /** @var array<string, Envelope[]> */
+    private static array $acknowledged = [];
+
+    /** @var array<string, Envelope[]> */
+    private static array $rejected = [];
+
+    /** @var array<string, Envelope[]> */
+    private static array $queue = [];
 
     /**
      * @internal
      */
-    public function __construct(MessageBusInterface $bus, SerializerInterface $serializer, array $options = [])
+    public function __construct(string $name, MessageBusInterface $bus, SerializerInterface $serializer, array $options = [])
     {
         $options = \array_merge(self::DEFAULT_OPTIONS, $options);
 
+        $this->name = $name;
         $this->bus = $bus;
         $this->serializer = $serializer;
-        $this->intercept = $options['intercept'];
-        $this->catchExceptions = $options['catch_exceptions'];
+
+        self::$intercept[$name] ??= $options['intercept'];
+        self::$catchExceptions[$name] ??= $options['catch_exceptions'];
     }
 
     /**
@@ -62,7 +69,7 @@ final class TestTransport implements TransportInterface
         // process any messages currently on queue
         $this->process();
 
-        $this->intercept = false;
+        self::$intercept[$this->name] = false;
 
         return $this;
     }
@@ -72,21 +79,21 @@ final class TestTransport implements TransportInterface
      */
     public function intercept(): self
     {
-        $this->intercept = true;
+        self::$intercept[$this->name] = true;
 
         return $this;
     }
 
     public function catchExceptions(): self
     {
-        $this->catchExceptions = true;
+        self::$catchExceptions[$this->name] = true;
 
         return $this;
     }
 
     public function throwExceptions(): self
     {
-        $this->catchExceptions = false;
+        self::$catchExceptions[$this->name] = false;
 
         return $this;
     }
@@ -97,7 +104,7 @@ final class TestTransport implements TransportInterface
      */
     public function process(?int $number = null): self
     {
-        $count = \count($this->queue);
+        $count = \count(self::$queue[$this->name] ?? []);
 
         if (null === $number) {
             return $this->process($count);
@@ -112,7 +119,7 @@ final class TestTransport implements TransportInterface
         $eventDispatcher = new EventDispatcher();
         $eventDispatcher->addSubscriber(new StopWorkerOnMessageLimitListener($number));
 
-        if (!$this->catchExceptions) {
+        if (!$this->isCatchingExceptions()) {
             $eventDispatcher->addListener(WorkerMessageFailedEvent::class, function(WorkerMessageFailedEvent $event) {
                 throw $event->getThrowable();
             });
@@ -126,22 +133,22 @@ final class TestTransport implements TransportInterface
 
     public function queue(): EnvelopeCollection
     {
-        return new EnvelopeCollection(...\array_values($this->queue));
+        return new EnvelopeCollection(...\array_values(self::$queue[$this->name] ?? []));
     }
 
     public function sent(): EnvelopeCollection
     {
-        return new EnvelopeCollection(...$this->sent);
+        return new EnvelopeCollection(...self::$sent[$this->name] ?? []);
     }
 
     public function acknowledged(): EnvelopeCollection
     {
-        return new EnvelopeCollection(...$this->acknowledged);
+        return new EnvelopeCollection(...self::$acknowledged[$this->name] ?? []);
     }
 
     public function rejected(): EnvelopeCollection
     {
-        return new EnvelopeCollection(...$this->rejected);
+        return new EnvelopeCollection(...self::$rejected[$this->name] ?? []);
     }
 
     /**
@@ -149,7 +156,7 @@ final class TestTransport implements TransportInterface
      */
     public function get(): iterable
     {
-        return \array_values($this->queue);
+        return \array_values(self::$queue[$this->name] ?? []);
     }
 
     /**
@@ -157,8 +164,8 @@ final class TestTransport implements TransportInterface
      */
     public function ack(Envelope $envelope): void
     {
-        $this->acknowledged[] = $envelope;
-        unset($this->queue[\spl_object_hash($envelope->getMessage())]);
+        self::$acknowledged[$this->name][] = $envelope;
+        unset(self::$queue[$this->name][\spl_object_hash($envelope->getMessage())]);
     }
 
     /**
@@ -166,8 +173,8 @@ final class TestTransport implements TransportInterface
      */
     public function reject(Envelope $envelope): void
     {
-        $this->rejected[] = $envelope;
-        unset($this->queue[\spl_object_hash($envelope->getMessage())]);
+        self::$rejected[$this->name][] = $envelope;
+        unset(self::$queue[$this->name][\spl_object_hash($envelope->getMessage())]);
     }
 
     /**
@@ -178,18 +185,39 @@ final class TestTransport implements TransportInterface
         // ensure serialization works (todo configurable? better error on failure?)
         $this->serializer->decode($this->serializer->encode($envelope));
 
-        $this->sent[] = $envelope;
-        $this->queue[\spl_object_hash($envelope->getMessage())] = $envelope;
+        self::$sent[$this->name][] = $envelope;
+        self::$queue[$this->name][\spl_object_hash($envelope->getMessage())] = $envelope;
 
-        if (!$this->intercept) {
+        if (!$this->isIntercepting()) {
             $this->process();
         }
 
         return $envelope;
     }
 
+    /**
+     * Resets all the data for this transport.
+     */
     public function reset(): void
     {
-        $this->queue = $this->sent = $this->acknowledged = $this->rejected = [];
+        self::$queue[$this->name] = self::$sent[$this->name] = self::$acknowledged[$this->name] = self::$rejected[$this->name] = [];
+    }
+
+    /**
+     * Resets data and options for all transports.
+     */
+    public static function resetAll(): void
+    {
+        self::$queue = self::$sent = self::$acknowledged = self::$rejected = self::$intercept = self::$catchExceptions = [];
+    }
+
+    private function isIntercepting(): bool
+    {
+        return self::$intercept[$this->name];
+    }
+
+    private function isCatchingExceptions(): bool
+    {
+        return self::$catchExceptions[$this->name];
     }
 }

@@ -116,29 +116,6 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
-    public function disabling_intercept_is_remembered_between_kernel_reboots(): void
-    {
-        self::bootKernel();
-
-        $this->messenger()->unblock();
-
-        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
-
-        $this->messenger()->queue()->assertEmpty();
-        $this->messenger()->sent()->assertCount(1);
-
-        self::ensureKernelShutdown();
-        self::bootKernel();
-
-        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
-
-        $this->messenger()->queue()->assertEmpty();
-        $this->messenger()->sent()->assertCount(2);
-    }
-
-    /**
-     * @test
-     */
     public function can_access_envelope_collection_items_via_first(): void
     {
         self::bootKernel();
@@ -438,26 +415,6 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
-    public function throwing_exceptions_is_remembered_between_kernel_reboots(): void
-    {
-        self::bootKernel();
-
-        $this->messenger()->throwExceptions();
-
-        self::ensureKernelShutdown();
-        self::bootKernel();
-
-        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA(true));
-
-        $this->expectException(\RuntimeException::class);
-        $this->expectErrorMessage('handling failed...');
-
-        $this->messenger()->process();
-    }
-
-    /**
-     * @test
-     */
     public function transport_data_is_persisted_between_requests_and_kernel_shutdown(): void
     {
         self::bootKernel();
@@ -515,6 +472,49 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->messenger()->reset();
 
         $this->messenger()->queue()->assertEmpty();
+    }
+
+    /**
+     * @test
+     */
+    public function disabling_intercept_is_remembered_between_kernel_reboots(): void
+    {
+        self::bootKernel();
+
+        $this->messenger()->unblock();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->messenger()->sent()->assertCount(1);
+
+        self::ensureKernelShutdown();
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->messenger()->sent()->assertCount(2);
+    }
+
+    /**
+     * @test
+     */
+    public function throwing_exceptions_is_remembered_between_kernel_reboots(): void
+    {
+        self::bootKernel();
+
+        $this->messenger()->throwExceptions();
+
+        self::ensureKernelShutdown();
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectErrorMessage('handling failed...');
+
+        $this->messenger()->process();
     }
 
     protected static function bootKernel(array $options = []): KernelInterface
