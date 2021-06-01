@@ -14,14 +14,14 @@ jobs:
       matrix:
         php: [7.4, 8.0]
         stability: [hightest]
-        symfony: [4.4.*, 5.2.*]
+        symfony: [4.4.*, 5.2.*, 5.3.*]
         include:
           - php: 7.4
             stability: lowest
             symfony: '*'
           - php: 8.0
             stability: highest
-            symfony: '@dev'
+            symfony: '5.4.*@dev'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2.3.3
@@ -37,7 +37,7 @@ jobs:
 
       - name: Set minimum-stability to dev
         run: composer config minimum-stability dev
-        if: ${{ matrix.symfony == '@dev' }}
+        if: ${{ contains(matrix.symfony, '@dev') }}
 
       - name: Install dependencies
         uses: ramsey/composer-install@v1
