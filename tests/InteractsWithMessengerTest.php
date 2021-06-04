@@ -517,6 +517,27 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->messenger()->process();
     }
 
+    /**
+     * @test
+     */
+    public function can_manually_send_message_to_transport_and_process(): void
+    {
+        self::bootKernel();
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->assertEmpty(self::$container->get(MessageAHandler::class)->messages);
+
+        $this->messenger()->send(Envelope::wrap(new MessageA()));
+
+        $this->messenger()->queue()->assertCount(1);
+        $this->assertEmpty(self::$container->get(MessageAHandler::class)->messages);
+
+        $this->messenger()->process();
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->assertCount(1, self::$container->get(MessageAHandler::class)->messages);
+    }
+
     protected static function bootKernel(array $options = []): KernelInterface
     {
         return parent::bootKernel(\array_merge(['environment' => 'single_transport'], $options));
