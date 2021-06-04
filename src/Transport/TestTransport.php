@@ -177,9 +177,6 @@ final class TestTransport implements TransportInterface
         unset(self::$queue[$this->name][\spl_object_hash($envelope->getMessage())]);
     }
 
-    /**
-     * @internal
-     */
     public function send(Envelope $envelope): Envelope
     {
         // ensure serialization works (todo configurable? better error on failure?)
