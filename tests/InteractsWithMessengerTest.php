@@ -2,6 +2,7 @@
 
 namespace Zenstruck\Messenger\Test\Tests;
 
+use PHPUnit\Framework\AssertionFailedError;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Messenger\Envelope;
@@ -14,6 +15,9 @@ use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageAHandler;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageB;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageBHandler;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageC;
+use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageD;
+use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageE;
+use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageF;
 use Zenstruck\Messenger\Test\Tests\Fixture\NoBundleKernel;
 
 /**
@@ -116,6 +120,25 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
+    public function unblocking_processes_existing_messages_on_queue(): void
+    {
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageB());
+
+        $this->messenger()->queue()->assertCount(2);
+        $this->messenger()->acknowledged()->assertEmpty();
+
+        $this->messenger()->unblock();
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->messenger()->acknowledged()->assertCount(2);
+    }
+
+    /**
+     * @test
+     */
     public function can_access_envelope_collection_items_via_first(): void
     {
         self::bootKernel();
@@ -205,7 +228,6 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertCount(1, self::$container->get(MessageBHandler::class)->messages);
 
         $this->messenger('async1')->process(1);
-        $this->messenger('async2')->process(1);
 
         $this->messenger('async1')->queue()->assertCount(1);
         $this->messenger('async1')->queue()->assertContains(MessageA::class, 1);
@@ -214,10 +236,11 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertCount(1, self::$container->get(MessageBHandler::class)->messages);
 
         $this->messenger('async1')->process();
-        $this->messenger('async2')->process();
 
         $this->messenger('async1')->queue()->assertEmpty();
         $this->messenger('async2')->queue()->assertEmpty();
+        $this->messenger('async2')->acknowledged()->assertCount(1);
+        $this->messenger('async2')->acknowledged()->assertContains(MessageB::class, 1);
         $this->assertCount(2, self::$container->get(MessageAHandler::class)->messages);
         $this->assertCount(1, self::$container->get(MessageBHandler::class)->messages);
     }
@@ -536,6 +559,95 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         $this->messenger()->queue()->assertEmpty();
         $this->assertCount(1, self::$container->get(MessageAHandler::class)->messages);
+    }
+
+    /**
+     * @test
+     */
+    public function process_all_is_recursive(): void
+    {
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageD());
+
+        $this->messenger()->queue()->assertCount(1);
+        $this->messenger()->queue()->assertContains(MessageD::class, 1);
+
+        $this->messenger()->process();
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->messenger()->dispatched()->assertCount(3);
+        $this->messenger()->acknowledged()->assertCount(3);
+        $this->messenger()->acknowledged()->assertContains(MessageD::class, 1);
+        $this->messenger()->acknowledged()->assertContains(MessageE::class, 1);
+        $this->messenger()->acknowledged()->assertContains(MessageF::class, 1);
+    }
+
+    /**
+     * @test
+     */
+    public function process_x_messages_is_recursive(): void
+    {
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageD());
+
+        $this->messenger()->queue()->assertCount(1);
+        $this->messenger()->queue()->assertContains(MessageD::class, 1);
+
+        $this->messenger()->process(1);
+
+        $this->messenger()->queue()->assertCount(1);
+        $this->messenger()->queue()->assertContains(MessageE::class, 1);
+        $this->messenger()->acknowledged()->assertCount(1);
+        $this->messenger()->acknowledged()->assertContains(MessageD::class, 1);
+
+        $this->messenger()->process(2);
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->messenger()->acknowledged()->assertCount(3);
+        $this->messenger()->acknowledged()->assertContains(MessageE::class, 1);
+        $this->messenger()->acknowledged()->assertContains(MessageF::class, 1);
+    }
+
+    /**
+     * @test
+     */
+    public function fails_if_trying_to_process_more_messages_than_can_be_processed(): void
+    {
+        self::bootKernel();
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        try {
+            $this->messenger()->process(2);
+        } catch (AssertionFailedError $e) {
+            $this->assertStringContainsString('Expected to process 2 messages but only 1 was processed.', $e->getMessage());
+            $this->messenger()->queue()->assertEmpty();
+            $this->messenger()->acknowledged()->assertContains(MessageA::class, 1);
+
+            return;
+        }
+
+        $this->fail('Did not fail.');
+    }
+
+    /**
+     * @test
+     */
+    public function process_fails_if_no_messages_on_queue(): void
+    {
+        self::bootKernel();
+
+        try {
+            $this->messenger()->process();
+        } catch (AssertionFailedError $e) {
+            $this->assertStringContainsString('No messages to process.', $e->getMessage());
+
+            return;
+        }
+
+        $this->fail('Did not fail.');
     }
 
     protected static function bootKernel(array $options = []): KernelInterface

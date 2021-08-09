@@ -95,6 +95,9 @@ class MyTest extends KernelTestCase // or WebTestCase
 }
 ```
 
+**NOTE:** Calling `process()` not only processes messages on the queue but any
+messages created during the handling of messages (all by default or up to `$number`).
+
 ### Other Transport Assertions and Helpers
 
 ```php
