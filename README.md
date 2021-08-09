@@ -113,7 +113,7 @@ class MyTest extends KernelTestCase // or WebTestCase
         $this->messenger()->send(Envelope::wrap(new MyMessage()));
 
         $queue = $this->messenger()->queued();
-        $sent = $this->messenger()->sent();
+        $dispatched = $this->messenger()->dispatched();
         $acknowledged = $this->messenger()->acknowledged(); // messages successfully processed
         $rejected = $this->messenger()->rejected(); // messages not successfully processed
 
@@ -266,7 +266,7 @@ class MyTest extends KernelTestCase // or WebTestCase
     public function test_something(): void
     {
         $this->messenger('high')->queue();
-        $this->messenger('low')->sent();
+        $this->messenger('low')->dispatched();
     }
 }
 ```
