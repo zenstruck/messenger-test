@@ -136,7 +136,7 @@ final class TestTransport implements TransportInterface
         return new EnvelopeCollection(...\array_values(self::$queue[$this->name] ?? []));
     }
 
-    public function sent(): EnvelopeCollection
+    public function dispatched(): EnvelopeCollection
     {
         return new EnvelopeCollection(...self::$sent[$this->name] ?? []);
     }
