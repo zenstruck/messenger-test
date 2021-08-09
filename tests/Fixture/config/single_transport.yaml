@@ -8,3 +8,6 @@ framework:
         routing:
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: [async]
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageB: [async]
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageD: [async]
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageE: [async]
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageF: [async]

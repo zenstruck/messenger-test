@@ -7,6 +7,9 @@ services:
     Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageAHandler: ~
     Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageBHandler: ~
     Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageCHandler: ~
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageDHandler: ~
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageEHandler: ~
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageFHandler: ~
 
     message_bus:
         alias: Symfony\Component\Messenger\MessageBusInterface

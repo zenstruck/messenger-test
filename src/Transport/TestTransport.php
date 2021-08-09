@@ -6,6 +6,7 @@ use PHPUnit\Framework\Assert as PHPUnit;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
+use Symfony\Component\Messenger\Event\WorkerRunningEvent;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
@@ -66,8 +67,10 @@ final class TestTransport implements TransportInterface
      */
     public function unblock(): self
     {
-        // process any messages currently on queue
-        $this->process();
+        if ($this->hasMessagesToProcess()) {
+            // process any messages currently on queue
+            $this->process();
+        }
 
         self::$intercept[$this->name] = false;
 
@@ -99,25 +102,37 @@ final class TestTransport implements TransportInterface
     }
 
     /**
-     * @param int|null $number int: the number of messages on the queue to process
-     *                         null: process all messages on the queue
+     * Processes messages on the queue. This is done recursively so if handling
+     * a message dispatches more messages, these will be processed as well (up
+     * to $number).
+     *
+     * @param int $number the number of messages to process (-1 for all)
      */
-    public function process(?int $number = null): self
+    public function process(int $number = -1): self
     {
-        $count = \count(self::$queue[$this->name] ?? []);
-
-        if (null === $number) {
-            return $this->process($count);
-        }
-
-        if (0 === $count) {
-            return $this;
-        }
-
-        PHPUnit::assertGreaterThanOrEqual($number, $count, "Tried to process {$number} queued messages but only {$count} are on in the queue.");
+        PHPUnit::assertTrue($this->hasMessagesToProcess(), 'No messages to process.');
 
         $eventDispatcher = new EventDispatcher();
-        $eventDispatcher->addSubscriber(new StopWorkerOnMessageLimitListener($number));
+        $processCount = 0;
+
+        $eventDispatcher->addListener(
+            WorkerRunningEvent::class,
+            static function(WorkerRunningEvent $event) use (&$processCount) {
+                if ($event->isWorkerIdle()) {
+                    // stop worker if no messages to process
+                    $event->getWorker()->stop();
+
+                    return;
+                }
+
+                ++$processCount;
+            }
+        );
+
+        if ($number > 0) {
+            // stop if limit was placed on number to process
+            $eventDispatcher->addSubscriber(new StopWorkerOnMessageLimitListener($number));
+        }
 
         if (!$this->isCatchingExceptions()) {
             $eventDispatcher->addListener(WorkerMessageFailedEvent::class, function(WorkerMessageFailedEvent $event) {
@@ -127,6 +142,10 @@ final class TestTransport implements TransportInterface
 
         $worker = new Worker([$this], $this->bus, $eventDispatcher);
         $worker->run(['sleep' => 0]);
+
+        if ($number > 0) {
+            PHPUnit::assertSame($number, $processCount, "Expected to process {$number} messages but only {$processCount} was processed.");
+        }
 
         return $this;
     }
@@ -216,5 +235,10 @@ final class TestTransport implements TransportInterface
     private function isCatchingExceptions(): bool
     {
         return self::$catchExceptions[$this->name];
+    }
+
+    private function hasMessagesToProcess(): bool
+    {
+        return !empty(self::$queue[$this->name] ?? []);
     }
 }
