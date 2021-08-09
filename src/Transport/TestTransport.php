@@ -35,7 +35,7 @@ final class TestTransport implements TransportInterface
     private static array $catchExceptions = [];
 
     /** @var array<string, Envelope[]> */
-    private static array $sent = [];
+    private static array $dispatched = [];
 
     /** @var array<string, Envelope[]> */
     private static array $acknowledged = [];
@@ -157,7 +157,7 @@ final class TestTransport implements TransportInterface
 
     public function dispatched(): EnvelopeCollection
     {
-        return new EnvelopeCollection(...self::$sent[$this->name] ?? []);
+        return new EnvelopeCollection(...self::$dispatched[$this->name] ?? []);
     }
 
     public function acknowledged(): EnvelopeCollection
@@ -201,7 +201,7 @@ final class TestTransport implements TransportInterface
         // ensure serialization works (todo configurable? better error on failure?)
         $this->serializer->decode($this->serializer->encode($envelope));
 
-        self::$sent[$this->name][] = $envelope;
+        self::$dispatched[$this->name][] = $envelope;
         self::$queue[$this->name][\spl_object_hash($envelope->getMessage())] = $envelope;
 
         if (!$this->isIntercepting()) {
@@ -216,7 +216,7 @@ final class TestTransport implements TransportInterface
      */
     public function reset(): void
     {
-        self::$queue[$this->name] = self::$sent[$this->name] = self::$acknowledged[$this->name] = self::$rejected[$this->name] = [];
+        self::$queue[$this->name] = self::$dispatched[$this->name] = self::$acknowledged[$this->name] = self::$rejected[$this->name] = [];
     }
 
     /**
@@ -224,7 +224,7 @@ final class TestTransport implements TransportInterface
      */
     public static function resetAll(): void
     {
-        self::$queue = self::$sent = self::$acknowledged = self::$rejected = self::$intercept = self::$catchExceptions = [];
+        self::$queue = self::$dispatched = self::$acknowledged = self::$rejected = self::$intercept = self::$catchExceptions = [];
     }
 
     private function isIntercepting(): bool
