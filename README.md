@@ -85,10 +85,12 @@ class MyTest extends KernelTestCase // or WebTestCase
         $this->messenger()->queue()->assertCount(3);
 
         $this->messenger()->process(1); // process one message
+        $this->messenger()->processOrFail(1); // equivalent to above but fails if queue empty
 
         $this->messenger()->queue()->assertCount(2); // queue now only has 2 items
 
         $this->messenger()->process(); // process all messages on the queue
+        $this->messenger()->processOrFail(); // equivalent to above but fails if queue empty
 
         $this->messenger()->queue()->assertEmpty(); // queue is now empty
     }
