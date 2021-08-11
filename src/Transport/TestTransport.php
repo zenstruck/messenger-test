@@ -110,8 +110,6 @@ final class TestTransport implements TransportInterface
      */
     public function process(int $number = -1): self
     {
-        //PHPUnit::assertTrue($this->hasMessagesToProcess(), 'No messages to process.');
-
         $eventDispatcher = new EventDispatcher();
         $processCount = 0;
 
@@ -148,6 +146,16 @@ final class TestTransport implements TransportInterface
         }
 
         return $this;
+    }
+
+    /**
+     * Works the same as {@see process()} but fails if no messages on queue.
+     */
+    public function processOrFail(int $number = -1): self
+    {
+        PHPUnit::assertTrue($this->hasMessagesToProcess(), 'No messages to process.');
+
+        return $this->process($number);
     }
 
     public function queue(): EnvelopeCollection

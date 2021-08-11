@@ -635,14 +635,31 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
-    public function process_fails_if_no_messages_on_queue(): void
+    public function process_or_fail_processes_messages(): void
     {
-        $this->markTestIncomplete();
+        self::bootKernel();
 
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        $this->messenger()->queue()->assertCount(1);
+        $this->messenger()->queue()->assertContains(MessageA::class, 1);
+
+        $this->messenger()->processOrFail();
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->messenger()->acknowledged()->assertCount(1);
+        $this->messenger()->acknowledged()->assertContains(MessageA::class, 1);
+    }
+
+    /**
+     * @test
+     */
+    public function process_or_fail_fails_if_no_messages_on_queue(): void
+    {
         self::bootKernel();
 
         try {
-            $this->messenger()->process();
+            $this->messenger()->processOrFail();
         } catch (AssertionFailedError $e) {
             $this->assertStringContainsString('No messages to process.', $e->getMessage());
 
