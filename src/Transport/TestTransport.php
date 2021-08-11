@@ -110,7 +110,7 @@ final class TestTransport implements TransportInterface
      */
     public function process(int $number = -1): self
     {
-        PHPUnit::assertTrue($this->hasMessagesToProcess(), 'No messages to process.');
+        //PHPUnit::assertTrue($this->hasMessagesToProcess(), 'No messages to process.');
 
         $eventDispatcher = new EventDispatcher();
         $processCount = 0;
