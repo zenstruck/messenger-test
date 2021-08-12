@@ -2,7 +2,6 @@
 
 namespace Zenstruck\Messenger\Test\Transport;
 
-use PHPUnit\Framework\Assert as PHPUnit;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
@@ -12,6 +11,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
+use Zenstruck\Assert;
 use Zenstruck\Messenger\Test\EnvelopeCollection;
 
 /**
@@ -142,7 +142,7 @@ final class TestTransport implements TransportInterface
         $worker->run(['sleep' => 0]);
 
         if ($number > 0) {
-            PHPUnit::assertSame($number, $processCount, "Expected to process {$number} messages but only {$processCount} was processed.");
+            Assert::that($processCount)->is($number, 'Expected to process {expected} messages but only processed {actual}.');
         }
 
         return $this;
@@ -153,7 +153,7 @@ final class TestTransport implements TransportInterface
      */
     public function processOrFail(int $number = -1): self
     {
-        PHPUnit::assertTrue($this->hasMessagesToProcess(), 'No messages to process.');
+        Assert::true($this->hasMessagesToProcess(), 'No messages to process.');
 
         return $this->process($number);
     }

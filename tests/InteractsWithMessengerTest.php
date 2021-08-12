@@ -9,6 +9,8 @@ use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
+use Symfony\Component\Messenger\Stamp\SerializerStamp;
+use Zenstruck\Assert;
 use Zenstruck\Messenger\Test\InteractsWithMessenger;
 use Zenstruck\Messenger\Test\TestEnvelope;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA;
@@ -181,6 +183,10 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         $this->messenger()->queue()->first()->assertHasStamp(DelayStamp::class);
         $this->messenger()->queue()->first(MessageB::class)->assertNotHasStamp(DelayStamp::class);
+
+        Assert::that(fn() => $this->messenger()->queue()->first()->assertHasStamp(SerializerStamp::class))
+            ->throws(AssertionFailedError::class, \sprintf('Expected to find stamp "%s" but did not.', SerializerStamp::class))
+        ;
     }
 
     /**
@@ -620,17 +626,11 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
 
-        try {
-            $this->messenger()->process(2);
-        } catch (AssertionFailedError $e) {
-            $this->assertStringContainsString('Expected to process 2 messages but only 1 was processed.', $e->getMessage());
+        Assert::that(fn() => $this->messenger()->process(2))->throws(function(AssertionFailedError $e) {
+            $this->assertStringContainsString('Expected to process 2 messages but only processed 1.', $e->getMessage());
             $this->messenger()->queue()->assertEmpty();
             $this->messenger()->acknowledged()->assertContains(MessageA::class, 1);
-
-            return;
-        }
-
-        $this->fail('Did not fail.');
+        });
     }
 
     /**
@@ -659,15 +659,39 @@ final class InteractsWithMessengerTest extends WebTestCase
     {
         self::bootKernel();
 
-        try {
-            $this->messenger()->processOrFail();
-        } catch (AssertionFailedError $e) {
-            $this->assertStringContainsString('No messages to process.', $e->getMessage());
+        Assert::that(fn() => $this->messenger()->processOrFail())
+            ->throws(AssertionFailedError::class, 'No messages to process.')
+        ;
+    }
 
-            return;
-        }
+    /**
+     * @test
+     */
+    public function envelope_collection_assertions(): void
+    {
+        self::bootKernel();
 
-        $this->fail('Did not fail.');
+        Assert::that(fn() => $this->messenger()->dispatched()->assertCount(2))
+            ->throws(AssertionFailedError::class, 'Expected 2 messages but 0 messages found.')
+        ;
+        Assert::that(fn() => $this->messenger()->dispatched()->assertContains(MessageA::class))
+            ->throws(AssertionFailedError::class, \sprintf('Message "%s" not found.', MessageA::class))
+        ;
+        Assert::that(fn() => $this->messenger()->dispatched()->assertNotEmpty())
+            ->throws(AssertionFailedError::class, 'Expected some messages but found none.')
+        ;
+
+        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        Assert::that(fn() => $this->messenger()->dispatched()->assertEmpty())
+            ->throws(AssertionFailedError::class, 'Expected 0 messages but 1 messages found.')
+        ;
+        Assert::that(fn() => $this->messenger()->dispatched()->assertContains(MessageA::class, 2))
+            ->throws(AssertionFailedError::class, \sprintf('Expected to find "%s" 2 times but found 1 times.', MessageA::class))
+        ;
+        Assert::that(fn() => $this->messenger()->dispatched()->assertNotContains(MessageA::class))
+            ->throws(AssertionFailedError::class, \sprintf('Found message "%s" but should not.', MessageA::class))
+        ;
     }
 
     protected static function bootKernel(array $options = []): KernelInterface
