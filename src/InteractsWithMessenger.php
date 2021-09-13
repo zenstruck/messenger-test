@@ -26,14 +26,16 @@ trait InteractsWithMessenger
             throw new \LogicException(\sprintf('The %s trait can only be used with %s.', __TRAIT__, KernelTestCase::class));
         }
 
-        if (!self::$container) {
+        if (!self::$booted) {
             self::bootKernel();
         }
 
-        if (!self::$container->has(TestTransportRegistry::class)) {
+        $container = \method_exists($this, 'getContainer') ? self::getContainer() : self::$container;
+
+        if (!$container->has(TestTransportRegistry::class)) {
             throw new \LogicException('Cannot access transport - is ZenstruckMessengerTestBundle enabled in your test environment?');
         }
 
-        return self::$container->get(TestTransportRegistry::class)->get($transport);
+        return $container->get(TestTransportRegistry::class)->get($transport);
     }
 }

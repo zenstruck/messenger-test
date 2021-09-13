@@ -8,6 +8,7 @@ use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
+use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\RouteCollectionBuilder;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA;
 use Zenstruck\Messenger\Test\ZenstruckMessengerTestBundle;
@@ -37,8 +38,17 @@ class Kernel extends BaseKernel
         $loader->load(\sprintf('%s/config/%s.yaml', __DIR__, $this->getEnvironment()));
     }
 
-    protected function configureRoutes(RouteCollectionBuilder $routes): void
+    /**
+     * @param RouteCollectionBuilder|RoutingConfigurator $routes
+     */
+    protected function configureRoutes($routes): void
     {
-        $routes->add('/dispatch', 'kernel::dispatch');
+        if ($routes instanceof RouteCollectionBuilder) {
+            $routes->add('/dispatch', 'kernel::dispatch');
+
+            return;
+        }
+
+        $routes->add('dispatch', '/dispatch')->controller('kernel::dispatch');
     }
 }
