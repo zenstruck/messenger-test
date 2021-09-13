@@ -13,14 +13,14 @@
     ],
     "require": {
         "php": ">=7.4",
-        "symfony/framework-bundle": "^4.4|^5.0",
-        "symfony/messenger": "^4.4|^5.0"
+        "symfony/framework-bundle": "^4.4|^5.0|^6.0",
+        "symfony/messenger": "^4.4|^5.0|^6.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5.0",
-        "symfony/browser-kit": "^4.4|^5.0",
-        "symfony/phpunit-bridge": "^5.2",
-        "symfony/yaml": "^4.4|^5.0"
+        "symfony/browser-kit": "^4.4|^5.0|^6.0",
+        "symfony/phpunit-bridge": "^5.3",
+        "symfony/yaml": "^4.4|^5.0|^6.0"
     },
     "config": {
         "preferred-install": "dist",
@@ -31,5 +31,7 @@
     },
     "autoload-dev": {
         "psr-4": { "Zenstruck\\Messenger\\Test\\Tests\\": "tests/" }
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
