@@ -681,7 +681,7 @@ final class InteractsWithMessengerTest extends WebTestCase
             ->throws(AssertionFailedError::class, 'Expected some messages but found none.')
         ;
 
-        self::$container->get(MessageBusInterface::class)->dispatch(new MessageA());
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
 
         Assert::that(fn() => $this->messenger()->dispatched()->assertEmpty())
             ->throws(AssertionFailedError::class, 'Expected 0 messages but 1 messages found.')
