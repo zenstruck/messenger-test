@@ -2,8 +2,8 @@
 
 namespace Zenstruck\Messenger\Test;
 
-use PHPUnit\Framework\Assert as PHPUnit;
 use Symfony\Component\Messenger\Envelope;
+use Zenstruck\Assert;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
@@ -26,14 +26,20 @@ final class TestEnvelope
 
     public function assertHasStamp(string $class): self
     {
-        PHPUnit::assertNotEmpty($this->envelope->all($class));
+        Assert::that($this->envelope->all($class))->isNotEmpty(
+            'Expected to find stamp "{stamp}" but did not.',
+            ['stamp' => $class]
+        );
 
         return $this;
     }
 
     public function assertNotHasStamp(string $class): self
     {
-        PHPUnit::assertEmpty($this->envelope->all($class));
+        Assert::that($this->envelope->all($class))->isEmpty(
+            'Expected to not find "{stamp}" but did.',
+            ['stamp' => $class]
+        );
 
         return $this;
     }

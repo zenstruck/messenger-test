@@ -2,8 +2,8 @@
 
 namespace Zenstruck\Messenger\Test;
 
-use PHPUnit\Framework\Assert as PHPUnit;
 use Symfony\Component\Messenger\Envelope;
+use Zenstruck\Assert;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
@@ -27,26 +27,30 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
 
     public function assertNotEmpty(): self
     {
-        PHPUnit::assertNotEmpty($this, 'Expected some messages but found none.');
+        Assert::that($this)->isNotEmpty('Expected some messages but found none.');
 
         return $this;
     }
 
     public function assertCount(int $count): self
     {
-        PHPUnit::assertCount($count, $this->envelopes, \sprintf('Expected %d messages, but %d messages found.', $count, \count($this->envelopes)));
+        Assert::that($this->envelopes)->hasCount($count, 'Expected {expected} messages but {actual} messages found.');
 
         return $this;
     }
 
     public function assertContains(string $messageClass, ?int $times = null): self
     {
-        $actual = $this->messages($messageClass);
+        $messages = $this->messages($messageClass);
 
-        PHPUnit::assertNotEmpty($actual, "Message \"{$messageClass}\" not found.");
+        Assert::that($messages)->isNotEmpty('Message "{message}" not found.', ['message' => $messageClass]);
 
         if (null !== $times) {
-            PHPUnit::assertCount($times, $actual, \sprintf('Expected to find message "%s" %d times but found %d times.', $messageClass, $times, \count($actual)));
+            Assert::that($messages)->hasCount(
+                $times,
+                'Expected to find "{message}" {expected} times but found {actual} times.',
+                ['message' => $messageClass]
+            );
         }
 
         return $this;
@@ -54,9 +58,10 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
 
     public function assertNotContains(string $messageClass): self
     {
-        $actual = $this->messages($messageClass);
-
-        PHPUnit::assertEmpty($actual, "Found message \"{$messageClass}\" but should not.");
+        Assert::that($this->messages($messageClass))->isEmpty(
+            'Found message "{message}" but should not.',
+            ['message' => $messageClass]
+        );
 
         return $this;
     }
