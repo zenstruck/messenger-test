@@ -4,7 +4,6 @@ namespace Zenstruck\Messenger\Test;
 
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
@@ -18,16 +17,15 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
 {
     public function build(ContainerBuilder $container): void
     {
-        $factory = (new Definition(TestTransportFactory::class, [new Reference('messenger.routable_message_bus')]))
+        $container->register('zenstruck_messenger_test.transport_factory', TestTransportFactory::class)
+            ->setArguments([new Reference('messenger.routable_message_bus')])
             ->addTag('messenger.transport_factory')
         ;
 
-        $registry = (new Definition(TestTransportRegistry::class))
+        $container->register('zenstruck_messenger_test.transport_registry', TestTransportRegistry::class)
             ->setPublic(true)
         ;
 
-        $container->setDefinition(TestTransportFactory::class, $factory);
-        $container->setDefinition(TestTransportRegistry::class, $registry);
         $container->addCompilerPass($this);
     }
 
@@ -38,7 +36,7 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
 
     public function process(ContainerBuilder $container): void
     {
-        $registry = $container->getDefinition(TestTransportRegistry::class);
+        $registry = $container->getDefinition('zenstruck_messenger_test.transport_registry');
 
         foreach ($container->findTaggedServiceIds('messenger.receiver') as $id => $tags) {
             $name = $id;
