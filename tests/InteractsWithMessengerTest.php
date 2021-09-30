@@ -7,6 +7,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\SerializerStamp;
@@ -692,6 +693,30 @@ final class InteractsWithMessengerTest extends WebTestCase
         Assert::that(fn() => $this->messenger()->dispatched()->assertNotContains(MessageA::class))
             ->throws(AssertionFailedError::class, \sprintf('Found message "%s" but should not.', MessageA::class))
         ;
+    }
+
+    /**
+     * @test
+     */
+    public function messenger_worker_events_are_dispatched_when_processing(): void
+    {
+        $messages = [];
+
+        self::bootKernel();
+
+        self::getContainer()->get('event_dispatcher')->addListener(
+            WorkerMessageHandledEvent::class,
+            static function(WorkerMessageHandledEvent $event) use (&$messages) {
+                $messages[] = $event->getEnvelope()->getMessage();
+            }
+        );
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch($message = new MessageA());
+
+        $this->messenger()->process();
+
+        $this->assertCount(1, $messages);
+        $this->assertSame($message, $messages[0]);
     }
 
     protected static function bootKernel(array $options = []): KernelInterface

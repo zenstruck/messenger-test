@@ -18,7 +18,7 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
     public function build(ContainerBuilder $container): void
     {
         $container->register('zenstruck_messenger_test.transport_factory', TestTransportFactory::class)
-            ->setArguments([new Reference('messenger.routable_message_bus')])
+            ->setArguments([new Reference('messenger.routable_message_bus'), new Reference('event_dispatcher')])
             ->addTag('messenger.transport_factory')
         ;
 
