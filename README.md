@@ -52,13 +52,13 @@ class MyTest extends KernelTestCase // or WebTestCase
         // ...some code that routes messages to your configured transport
 
         // assert against the queue
-        $this->messenger()->queue()->assertEmpty(); 
-        $this->messenger()->queue()->assertNotEmpty(); 
+        $this->messenger()->queue()->assertEmpty();
+        $this->messenger()->queue()->assertNotEmpty();
         $this->messenger()->queue()->assertCount(3);
         $this->messenger()->queue()->assertContains(MyMessage::class); // queue contains this message
         $this->messenger()->queue()->assertContains(MyMessage::class, 3); // queue contains this message 3 times
         $this->messenger()->queue()->assertNotContains(MyMessage::class); // queue not contains this message
-        
+
         // access the queue data
         $this->messenger()->queue(); // Envelope[]
         $this->messenger()->queue()->messages(); // object[] the messages unwrapped from envelope
@@ -223,7 +223,7 @@ class MyTest extends KernelTestCase // or WebTestCase
 
         // enable intercept
         $this->messenger()->intercept();
-        
+
         // ...some code that routes messages to your configured transport
 
         // if messages are on the queue when calling unblock(), they are processed
