@@ -2,6 +2,7 @@
 
 namespace Zenstruck\Messenger\Test\Transport;
 
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
@@ -15,15 +16,17 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
 final class TestTransportFactory implements TransportFactoryInterface
 {
     private MessageBusInterface $bus;
+    private EventDispatcherInterface $dispatcher;
 
-    public function __construct(MessageBusInterface $bus)
+    public function __construct(MessageBusInterface $bus, EventDispatcherInterface $dispatcher)
     {
         $this->bus = $bus;
+        $this->dispatcher = $dispatcher;
     }
 
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface
     {
-        return new TestTransport($options['transport_name'], $this->bus, $serializer, $this->parseDsn($dsn));
+        return new TestTransport($options['transport_name'], $this->bus, $this->dispatcher, $serializer, $this->parseDsn($dsn));
     }
 
     public function supports(string $dsn, array $options): bool

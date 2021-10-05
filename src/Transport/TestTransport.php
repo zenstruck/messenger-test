@@ -2,7 +2,8 @@
 
 namespace Zenstruck\Messenger\Test\Transport;
 
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerRunningEvent;
@@ -25,6 +26,7 @@ final class TestTransport implements TransportInterface
     ];
 
     private string $name;
+    private EventDispatcherInterface $dispatcher;
     private MessageBusInterface $bus;
     private SerializerInterface $serializer;
 
@@ -49,11 +51,12 @@ final class TestTransport implements TransportInterface
     /**
      * @internal
      */
-    public function __construct(string $name, MessageBusInterface $bus, SerializerInterface $serializer, array $options = [])
+    public function __construct(string $name, MessageBusInterface $bus, EventDispatcherInterface $dispatcher, SerializerInterface $serializer, array $options = [])
     {
         $options = \array_merge(self::DEFAULT_OPTIONS, $options);
 
         $this->name = $name;
+        $this->dispatcher = $dispatcher;
         $this->bus = $bus;
         $this->serializer = $serializer;
 
@@ -110,12 +113,14 @@ final class TestTransport implements TransportInterface
      */
     public function process(int $number = -1): self
     {
-        $eventDispatcher = new EventDispatcher();
         $processCount = 0;
 
-        $eventDispatcher->addListener(
+        // keep track of added listeners/subscribers so we can remove after
+        $listeners = [];
+
+        $this->dispatcher->addListener(
             WorkerRunningEvent::class,
-            static function(WorkerRunningEvent $event) use (&$processCount) {
+            $listeners[WorkerRunningEvent::class] = static function(WorkerRunningEvent $event) use (&$processCount) {
                 if ($event->isWorkerIdle()) {
                     // stop worker if no messages to process
                     $event->getWorker()->stop();
@@ -129,17 +134,31 @@ final class TestTransport implements TransportInterface
 
         if ($number > 0) {
             // stop if limit was placed on number to process
-            $eventDispatcher->addSubscriber(new StopWorkerOnMessageLimitListener($number));
+            $this->dispatcher->addSubscriber($listeners[] = new StopWorkerOnMessageLimitListener($number));
         }
 
         if (!$this->isCatchingExceptions()) {
-            $eventDispatcher->addListener(WorkerMessageFailedEvent::class, function(WorkerMessageFailedEvent $event) {
-                throw $event->getThrowable();
-            });
+            $this->dispatcher->addListener(
+                WorkerMessageFailedEvent::class,
+                $listeners[WorkerMessageFailedEvent::class] = static function(WorkerMessageFailedEvent $event) {
+                    throw $event->getThrowable();
+                }
+            );
         }
 
-        $worker = new Worker([$this], $this->bus, $eventDispatcher);
+        $worker = new Worker([$this], $this->bus, $this->dispatcher);
         $worker->run(['sleep' => 0]);
+
+        // remove added listeners/subscribers
+        foreach ($listeners as $event => $listener) {
+            if ($listener instanceof EventSubscriberInterface) {
+                $this->dispatcher->removeSubscriber($listener);
+
+                continue;
+            }
+
+            $this->dispatcher->removeListener($event, $listener);
+        }
 
         if ($number > 0) {
             Assert::that($processCount)->is($number, 'Expected to process {expected} messages but only processed {actual}.');
