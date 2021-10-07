@@ -75,6 +75,35 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
+    public function can_use_envelope_collection_back(): void
+    {
+        self::bootKernel();
+
+        $this->messenger()
+            ->queue()->assertEmpty()->back()
+            ->dispatched()->assertEmpty()->back()
+            ->acknowledged()->assertEmpty()->back()
+            ->rejected()->assertEmpty()
+        ;
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        $this->messenger()
+            ->queue()->assertCount(1)->back()
+            ->dispatched()->assertCount(1)->back()
+            ->acknowledged()->assertEmpty()->back()
+            ->rejected()->assertEmpty()->back()
+            ->process()
+            ->queue()->assertEmpty()->back()
+            ->dispatched()->assertCount(1)->back()
+            ->acknowledged()->assertCount(1)->back()
+            ->rejected()->assertEmpty()->back()
+        ;
+    }
+
+    /**
+     * @test
+     */
     public function can_disable_intercept(): void
     {
         self::bootKernel();

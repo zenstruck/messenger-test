@@ -4,20 +4,28 @@ namespace Zenstruck\Messenger\Test;
 
 use Symfony\Component\Messenger\Envelope;
 use Zenstruck\Assert;
+use Zenstruck\Messenger\Test\Transport\TestTransport;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
 final class EnvelopeCollection implements \IteratorAggregate, \Countable
 {
+    private TestTransport $transport;
     private array $envelopes;
 
     /**
      * @internal
      */
-    public function __construct(Envelope ...$envelopes)
+    public function __construct(TestTransport $transport, Envelope ...$envelopes)
     {
+        $this->transport = $transport;
         $this->envelopes = $envelopes;
+    }
+
+    public function back(): TestTransport
+    {
+        return $this->transport;
     }
 
     public function assertEmpty(): self

@@ -107,6 +107,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Zenstruck\Messenger\Test\InteractsWithMessenger;
+use Zenstruck\Messenger\Test\Transport\TestTransport;
 
 class MyTest extends KernelTestCase // or WebTestCase
 {
@@ -155,6 +156,29 @@ class MyTest extends KernelTestCase // or WebTestCase
         // TestEnvelope stamp assertions
         $queue->first()->assertHasStamp(DelayStamp::class);
         $queue->first()->assertNotHasStamp(DelayStamp::class);
+
+        // reset collected messages on the transport
+        $this->messenger()->reset();
+
+        // reset collected messages for all transports
+        TestTransport::resetAll();
+
+        // fluid assertions on different EnvelopeCollections
+        $this->messenger()
+            ->queue()
+                ->assertNotEmpty()
+                ->assertContains(MyMessage::class)
+            ->back() // returns to the TestTransport
+            ->dispatched()
+                ->assertEmpty()
+            ->back()
+            ->acknowledged()
+                ->assertEmpty()
+            ->back()
+            ->rejected()
+                ->assertEmpty()
+            ->back()
+        ;
     }
 }
 ```
