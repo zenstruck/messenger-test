@@ -7,99 +7,16 @@ on:
     - cron: '0 0 1,16 * *'
 
 jobs:
-  tests:
-    name: PHP ${{ matrix.php }}, SF ${{ matrix.symfony }} - ${{ matrix.stability }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php: [7.4, 8.0]
-        stability: [hightest]
-        symfony: [4.4.*, 5.2.*, 5.3.*, 5.4.*]
-        include:
-          - php: 7.4
-            stability: lowest
-            symfony: '*'
-          - php: 8.0
-            stability: highest
-            symfony: 6.0.*
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2.3.3
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@2.7.0
-        with:
-          php-version: ${{ matrix.php }}
-          coverage: none
-          tools: flex
-
-      - name: Install dependencies
-        uses: ramsey/composer-install@v1
-        with:
-          dependency-versions: ${{ matrix.stability }}
-          composer-options: --prefer-dist
-        env:
-          SYMFONY_REQUIRE: ${{ matrix.symfony }}
-
-      - name: Test
-        run: vendor/bin/phpunit -v
+  test:
+    uses: zenstruck/.github/.github/workflows/php-test-symfony.yml@main
 
   code-coverage:
-    name: Code Coverage
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2.3.3
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@2.7.0
-        with:
-          php-version: 8.0
-          coverage: xdebug
-          ini-values: xdebug.mode=coverage
-
-      - name: Install dependencies
-        uses: ramsey/composer-install@v1
-        with:
-          composer-options: --prefer-dist
-
-      - name: Test with coverage
-        run: vendor/bin/phpunit -v --coverage-text --coverage-clover coverage.xml
-
-      - name: Publish coverage report to Codecov
-        uses: codecov/codecov-action@v1
-        with:
-          file: ./coverage.xml
+    uses: zenstruck/.github/.github/workflows/php-coverage-codecov.yml@main
+    with:
+      php: 8
 
   composer-validate:
-    name: Validate composer.json
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2.3.3
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@2.7.0
-        with:
-          php-version: 7.4
-          coverage: none
-
-      - name: Validate composer.json
-        run: composer validate --strict --no-check-lock
+    uses: zenstruck/.github/.github/workflows/php-composer-validate.yml@main
 
   cs-check:
-    name: PHP Coding Standards
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2.3.3
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@2.7.0
-        with:
-          php-version: 7.4
-          coverage: none
-          tools: php-cs-fixer
-
-      - name: Check CS
-        run: php-cs-fixer fix --dry-run --diff
+    uses: zenstruck/.github/.github/workflows/php-cs-fixer.yml@main
