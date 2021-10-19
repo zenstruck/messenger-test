@@ -52,6 +52,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->messenger()->queue()->assertContains(MessageB::class);
         $this->messenger()->queue()->assertContains(MessageB::class, 1);
         $this->messenger()->queue()->assertNotContains(MessageC::class);
+        $this->messenger()->queue()->assertContains(MessageC::class, 0);
         $this->assertEmpty(self::getContainer()->get(MessageAHandler::class)->messages);
         $this->assertEmpty(self::getContainer()->get(MessageBHandler::class)->messages);
 

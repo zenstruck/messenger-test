@@ -57,6 +57,7 @@ class MyTest extends KernelTestCase // or WebTestCase
         $this->messenger()->queue()->assertCount(3);
         $this->messenger()->queue()->assertContains(MyMessage::class); // queue contains this message
         $this->messenger()->queue()->assertContains(MyMessage::class, 3); // queue contains this message 3 times
+        $this->messenger()->queue()->assertContains(MyMessage::class, 0); // queue contains this message 0 times
         $this->messenger()->queue()->assertNotContains(MyMessage::class); // queue not contains this message
 
         // access the queue data
