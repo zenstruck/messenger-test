@@ -51,15 +51,17 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
     {
         $messages = $this->messages($messageClass);
 
-        Assert::that($messages)->isNotEmpty('Message "{message}" not found.', ['message' => $messageClass]);
-
         if (null !== $times) {
             Assert::that($messages)->hasCount(
                 $times,
                 'Expected to find "{message}" {expected} times but found {actual} times.',
                 ['message' => $messageClass]
             );
+
+            return $this;
         }
+
+        Assert::that($messages)->isNotEmpty('Message "{message}" not found.', ['message' => $messageClass]);
 
         return $this;
     }
