@@ -651,6 +651,22 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
+    public function process_x_recursive_when_intercept_disabled(): void
+    {
+        self::bootKernel();
+
+        $this->messenger()->unblock();
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageD());
+
+        $this->messenger()->acknowledged()->assertCount(3);
+        $this->messenger()->acknowledged()->assertContains(MessageD::class, 1);
+        $this->messenger()->acknowledged()->assertContains(MessageE::class, 1);
+        $this->messenger()->acknowledged()->assertContains(MessageF::class, 1);
+    }
+
+    /**
+     * @test
+     */
     public function fails_if_trying_to_process_more_messages_than_can_be_processed(): void
     {
         self::bootKernel();

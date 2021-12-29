@@ -179,7 +179,7 @@ final class TestTransport implements TransportInterface
 
     public function queue(): EnvelopeCollection
     {
-        return new EnvelopeCollection($this, ...\array_values(self::$queue[$this->name] ?? []));
+        return new EnvelopeCollection($this, ...self::$queue[$this->name] ?? []);
     }
 
     public function dispatched(): EnvelopeCollection
@@ -202,7 +202,7 @@ final class TestTransport implements TransportInterface
      */
     public function get(): iterable
     {
-        return \array_values(self::$queue[$this->name] ?? []);
+        return self::$queue[$this->name] ? [\array_shift(self::$queue[$this->name])] : [];
     }
 
     /**
@@ -211,7 +211,6 @@ final class TestTransport implements TransportInterface
     public function ack(Envelope $envelope): void
     {
         self::$acknowledged[$this->name][] = $envelope;
-        unset(self::$queue[$this->name][\spl_object_hash($envelope->getMessage())]);
     }
 
     /**
@@ -220,7 +219,6 @@ final class TestTransport implements TransportInterface
     public function reject(Envelope $envelope): void
     {
         self::$rejected[$this->name][] = $envelope;
-        unset(self::$queue[$this->name][\spl_object_hash($envelope->getMessage())]);
     }
 
     public function send(Envelope $envelope): Envelope
@@ -229,7 +227,7 @@ final class TestTransport implements TransportInterface
         $this->serializer->decode($this->serializer->encode($envelope));
 
         self::$dispatched[$this->name][] = $envelope;
-        self::$queue[$this->name][\spl_object_hash($envelope->getMessage())] = $envelope;
+        self::$queue[$this->name][] = $envelope;
 
         if (!$this->isIntercepting()) {
             $this->process();
