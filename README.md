@@ -268,6 +268,20 @@ framework:
             async: test://?intercept=false
 ```
 
+### Testing serialization
+
+By default, the bundle tests if the envelopes could be serialized and deserialized.
+This behavior can be disabled at transport level:
+
+```yaml
+# config/packages/test/messenger.yaml
+
+framework:
+    messenger:
+        transports:
+            async: test://?test_serialization=false
+```
+
 ### Multiple Transports
 
 If you have multiple transports you'd like to test, change all their dsn's to
