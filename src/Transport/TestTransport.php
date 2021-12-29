@@ -23,6 +23,7 @@ final class TestTransport implements TransportInterface
     private const DEFAULT_OPTIONS = [
         'intercept' => true,
         'catch_exceptions' => true,
+        'test_serialization' => true,
     ];
 
     private string $name;
@@ -35,6 +36,9 @@ final class TestTransport implements TransportInterface
 
     /** @var array<string, bool> */
     private static array $catchExceptions = [];
+
+    /** @var array<string, bool> */
+    private static array $testSerialization = [];
 
     /** @var array<string, Envelope[]> */
     private static array $dispatched = [];
@@ -62,6 +66,7 @@ final class TestTransport implements TransportInterface
 
         self::$intercept[$name] ??= $options['intercept'];
         self::$catchExceptions[$name] ??= $options['catch_exceptions'];
+        self::$testSerialization[$name] ??= $options['test_serialization'];
     }
 
     /**
@@ -225,8 +230,12 @@ final class TestTransport implements TransportInterface
 
     public function send(Envelope $envelope): Envelope
     {
-        // ensure serialization works (todo configurable? better error on failure?)
-        $this->serializer->decode($this->serializer->encode($envelope));
+        if ($this->shouldTestSerialization()) {
+            Assert::try(
+                fn() => $this->serializer->decode($this->serializer->encode($envelope)),
+                'A problem occurred in the serialization process.'
+            );
+        }
 
         self::$dispatched[$this->name][] = $envelope;
         self::$queue[$this->name][\spl_object_hash($envelope->getMessage())] = $envelope;
@@ -262,6 +271,11 @@ final class TestTransport implements TransportInterface
     private function isCatchingExceptions(): bool
     {
         return self::$catchExceptions[$this->name];
+    }
+
+    private function shouldTestSerialization(): bool
+    {
+        return self::$testSerialization[$this->name];
     }
 
     private function hasMessagesToProcess(): bool

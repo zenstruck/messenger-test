@@ -22,6 +22,7 @@ use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageC;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageD;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageE;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageF;
+use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageG;
 use Zenstruck\Messenger\Test\Tests\Fixture\NoBundleKernel;
 
 /**
@@ -747,6 +748,21 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         $this->assertCount(1, $messages);
         $this->assertSame($message, $messages[0]);
+    }
+
+    /**
+     * @test
+     */
+    public function serialization_problem_assertions(): void
+    {
+        self::bootKernel(['environment' => 'multi_transport']);
+
+        // "MessageG" is not serializable, but only transport async1 should catch this.
+        Assert::that(fn() => $this->messenger('async1')->send(new Envelope(new MessageG())))
+            ->throws(AssertionFailedError::class)
+        ;
+
+        Assert::run(fn() => $this->messenger('async2')->send(new Envelope(new MessageG())));
     }
 
     protected static function bootKernel(array $options = []): KernelInterface
