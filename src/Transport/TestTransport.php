@@ -151,7 +151,7 @@ final class TestTransport implements TransportInterface
             );
         }
 
-        $worker = new Worker([$this], $this->bus, $this->dispatcher);
+        $worker = new Worker([$this->name => $this], $this->bus, $this->dispatcher);
         $worker->run(['sleep' => 0]);
 
         // remove added listeners/subscribers
