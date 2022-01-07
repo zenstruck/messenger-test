@@ -9,7 +9,9 @@ framework:
             async2:
                 dsn: test://?intercept=false&catch_exceptions=false&test_serialization=false
             async3: in-memory://
+            async4:
+                dsn: test://?disable_retries=false
         routing:
-            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: [async1]
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: [async1, async4]
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageB: [async2]
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageG: [async2]

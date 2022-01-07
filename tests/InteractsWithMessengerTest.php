@@ -336,7 +336,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::bootKernel(['environment' => 'multi_transport']);
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('Multiple transports are registered (async1, async2, async3), you must specify a name.');
+        $this->expectExceptionMessage('Multiple transports are registered (async1, async2, async3, async4), you must specify a name.');
 
         $this->messenger();
     }
@@ -779,6 +779,22 @@ final class InteractsWithMessengerTest extends WebTestCase
         ;
 
         Assert::run(fn() => $this->messenger('async2')->send(new Envelope(new MessageG())));
+    }
+
+    /**
+     * @test
+     */
+    public function can_enable_retries(): void
+    {
+        self::bootKernel(['environment' => 'multi_transport']);
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->messenger('async4')
+            ->process()
+            ->rejected()
+            ->assertContains(MessageA::class, 4)
+        ;
     }
 
     protected static function bootKernel(array $options = []): KernelInterface
