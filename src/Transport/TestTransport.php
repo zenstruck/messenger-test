@@ -9,6 +9,7 @@ use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerRunningEvent;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
@@ -228,6 +229,11 @@ final class TestTransport implements TransportInterface
 
     public function send(Envelope $envelope): Envelope
     {
+        if ($envelope->last(RedeliveryStamp::class)) {
+            // message is being retried, don't process
+            return $envelope;
+        }
+
         if ($this->shouldTestSerialization()) {
             Assert::try(
                 fn() => $this->serializer->decode($this->serializer->encode($envelope)),

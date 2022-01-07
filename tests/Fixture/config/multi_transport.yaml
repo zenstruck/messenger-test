@@ -6,12 +6,8 @@ framework:
         transports:
             async1:
                 dsn: test://
-                retry_strategy:
-                    max_retries: 0
             async2:
                 dsn: test://?intercept=false&catch_exceptions=false&test_serialization=false
-                retry_strategy:
-                    max_retries: 0
             async3: in-memory://
         routing:
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: [async1]
