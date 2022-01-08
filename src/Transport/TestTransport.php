@@ -9,6 +9,7 @@ use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerRunningEvent;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
@@ -24,6 +25,7 @@ final class TestTransport implements TransportInterface
         'intercept' => true,
         'catch_exceptions' => true,
         'test_serialization' => true,
+        'disable_retries' => true,
     ];
 
     private string $name;
@@ -39,6 +41,9 @@ final class TestTransport implements TransportInterface
 
     /** @var array<string, bool> */
     private static array $testSerialization = [];
+
+    /** @var array<string, bool> */
+    private static array $disableRetries = [];
 
     /** @var array<string, Envelope[]> */
     private static array $dispatched = [];
@@ -67,6 +72,7 @@ final class TestTransport implements TransportInterface
         self::$intercept[$name] ??= $options['intercept'];
         self::$catchExceptions[$name] ??= $options['catch_exceptions'];
         self::$testSerialization[$name] ??= $options['test_serialization'];
+        self::$disableRetries[$name] ??= $options['disable_retries'];
     }
 
     /**
@@ -228,6 +234,11 @@ final class TestTransport implements TransportInterface
 
     public function send(Envelope $envelope): Envelope
     {
+        if ($this->isRetriesDisabled() && $envelope->last(RedeliveryStamp::class)) {
+            // message is being retried, don't process
+            return $envelope;
+        }
+
         if ($this->shouldTestSerialization()) {
             Assert::try(
                 fn() => $this->serializer->decode($this->serializer->encode($envelope)),
@@ -274,6 +285,11 @@ final class TestTransport implements TransportInterface
     private function shouldTestSerialization(): bool
     {
         return self::$testSerialization[$this->name];
+    }
+
+    private function isRetriesDisabled(): bool
+    {
+        return self::$disableRetries[$this->name];
     }
 
     private function hasMessagesToProcess(): bool

@@ -268,10 +268,10 @@ framework:
             async: test://?intercept=false
 ```
 
-### Testing serialization
+### Testing Serialization
 
-By default, the bundle tests if the envelopes could be serialized and deserialized.
-This behavior can be disabled at transport level:
+By default, the `TestTransport` tests that messages can be serialized and deserialized.
+This behavior can be disabled with the transport dsn:
 
 ```yaml
 # config/packages/test/messenger.yaml
@@ -280,6 +280,20 @@ framework:
     messenger:
         transports:
             async: test://?test_serialization=false
+```
+
+### Enable Retries
+
+By default, the `TestTransport` does not retry failed messages (your retry settings
+are ignored). This behavior can be disabled with the transport dsn:
+
+```yaml
+# config/packages/test/messenger.yaml
+
+framework:
+    messenger:
+        transports:
+            async: test://?disable_retries=false
 ```
 
 ### Multiple Transports
