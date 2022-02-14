@@ -4,6 +4,7 @@ namespace Zenstruck\Messenger\Test;
 
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Zenstruck\Messenger\Test\Transport\TestTransport;
+use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
@@ -35,6 +36,9 @@ trait InteractsWithMessenger
             throw new \LogicException('Cannot access transport - is ZenstruckMessengerTestBundle enabled in your test environment?');
         }
 
-        return $container->get('zenstruck_messenger_test.transport_registry')->get($transport);
+        /** @var TestTransportRegistry $registry */
+        $registry = $container->get('zenstruck_messenger_test.transport_registry');
+
+        return $registry->get($transport);
     }
 }

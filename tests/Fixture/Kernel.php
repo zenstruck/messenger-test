@@ -41,10 +41,10 @@ class Kernel extends BaseKernel
     /**
      * @param RouteCollectionBuilder|RoutingConfigurator $routes
      */
-    protected function configureRoutes($routes): void
+    protected function configureRoutes($routes): void // @phpstan-ignore-line
     {
-        if ($routes instanceof RouteCollectionBuilder) {
-            $routes->add('/dispatch', 'kernel::dispatch');
+        if ($routes instanceof RouteCollectionBuilder) { // @phpstan-ignore-line
+            $routes->add('/dispatch', 'kernel::dispatch'); // @phpstan-ignore-line
 
             return;
         }

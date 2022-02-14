@@ -8,10 +8,14 @@ use Zenstruck\Messenger\Test\Transport\TestTransport;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
+ *
+ * @implements \IteratorAggregate<TestEnvelope>
  */
 final class EnvelopeCollection implements \IteratorAggregate, \Countable
 {
     private TestTransport $transport;
+
+    /** @var Envelope[] */
     private array $envelopes;
 
     /**
@@ -128,7 +132,10 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
         return \iterator_to_array($this);
     }
 
-    public function getIterator(): \Iterator
+    /**
+     * @return \Traversable|TestEnvelope[]
+     */
+    public function getIterator(): \Traversable
     {
         foreach ($this->envelopes as $envelope) {
             yield new TestEnvelope($envelope);

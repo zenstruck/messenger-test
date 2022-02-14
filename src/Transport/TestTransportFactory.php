@@ -24,16 +24,19 @@ final class TestTransportFactory implements TransportFactoryInterface
         $this->dispatcher = $dispatcher;
     }
 
-    public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface
+    public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface // @phpstan-ignore-line
     {
         return new TestTransport($options['transport_name'], $this->bus, $this->dispatcher, $serializer, $this->parseDsn($dsn));
     }
 
-    public function supports(string $dsn, array $options): bool
+    public function supports(string $dsn, array $options): bool // @phpstan-ignore-line
     {
         return 0 === \mb_strpos($dsn, 'test://');
     }
 
+    /**
+     * @return array<string,bool>
+     */
     private function parseDsn(string $dsn): array
     {
         $query = [];

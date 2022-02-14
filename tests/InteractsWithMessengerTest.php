@@ -797,7 +797,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         ;
     }
 
-    protected static function bootKernel(array $options = []): KernelInterface
+    protected static function bootKernel(array $options = []): KernelInterface // @phpstan-ignore-line
     {
         return parent::bootKernel(\array_merge(['environment' => 'single_transport'], $options));
     }
