@@ -20,7 +20,7 @@ final class TestEnvelope
     }
 
     /**
-     * @param string[] $arguments
+     * @param mixed[] $arguments
      *
      * @return mixed
      */
