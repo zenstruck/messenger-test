@@ -9,7 +9,8 @@ use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
  */
 final class MessageBHandler implements MessageHandlerInterface
 {
-    public $messages = [];
+    /** @var MessageB[] */
+    public array $messages = [];
 
     public function __invoke(MessageB $message): void
     {

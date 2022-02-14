@@ -3,7 +3,6 @@
 namespace Zenstruck\Messenger\Test\Transport;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerRunningEvent;
@@ -59,6 +58,8 @@ final class TestTransport implements TransportInterface
 
     /**
      * @internal
+     *
+     * @param array<string,bool> $options
      */
     public function __construct(string $name, MessageBusInterface $bus, EventDispatcherInterface $dispatcher, SerializerInterface $serializer, array $options = [])
     {
@@ -128,6 +129,7 @@ final class TestTransport implements TransportInterface
 
         // keep track of added listeners/subscribers so we can remove after
         $listeners = [];
+        $subscribers = [];
 
         $this->dispatcher->addListener(
             WorkerRunningEvent::class,
@@ -145,7 +147,7 @@ final class TestTransport implements TransportInterface
 
         if ($number > 0) {
             // stop if limit was placed on number to process
-            $this->dispatcher->addSubscriber($listeners[] = new StopWorkerOnMessageLimitListener($number));
+            $this->dispatcher->addSubscriber($subscribers[] = new StopWorkerOnMessageLimitListener($number));
         }
 
         if (!$this->isCatchingExceptions()) {
@@ -162,13 +164,11 @@ final class TestTransport implements TransportInterface
 
         // remove added listeners/subscribers
         foreach ($listeners as $event => $listener) {
-            if ($listener instanceof EventSubscriberInterface) {
-                $this->dispatcher->removeSubscriber($listener);
-
-                continue;
-            }
-
             $this->dispatcher->removeListener($event, $listener);
+        }
+
+        foreach ($subscribers as $subscriber) {
+            $this->dispatcher->removeSubscriber($subscriber);
         }
 
         if ($number > 0) {

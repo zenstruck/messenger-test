@@ -19,7 +19,12 @@ final class TestEnvelope
         $this->envelope = $envelope;
     }
 
-    public function __call($name, $arguments)
+    /**
+     * @param string[] $arguments
+     *
+     * @return mixed
+     */
+    public function __call(string $name, array $arguments)
     {
         return $this->envelope->{$name}(...$arguments);
     }
