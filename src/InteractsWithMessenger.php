@@ -13,6 +13,7 @@ trait InteractsWithMessenger
 {
     /**
      * @internal
+     * @before
      * @after
      */
     final protected static function _resetMessengerTransports(): void
