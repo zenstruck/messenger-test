@@ -28,6 +28,9 @@
         "preferred-install": "dist",
         "sort-packages": true
     },
+    "conflict": {
+        "symfony/framework-bundle": "5.4.5|6.0.5"
+    },
     "autoload": {
         "psr-4": { "Zenstruck\\Messenger\\Test\\": "src/" }
     },
