@@ -49,5 +49,12 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
 
             $registry->addMethodCall('register', [$name, new Reference($id)]);
         }
+
+        $factory = $container->getDefinition('zenstruck_messenger_test.transport_factory');
+
+        if ($container->hasDefinition($id = 'doctrine.orm.messenger.event_subscriber.doctrine_clear_entity_manager')) {
+            // we want to remove this subscriber so the em isn't reset when processing messages
+            $factory->addMethodCall('registerSubscriberToRemove', [new Reference($id)]);
+        }
     }
 }

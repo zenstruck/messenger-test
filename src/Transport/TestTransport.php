@@ -3,6 +3,7 @@
 namespace Zenstruck\Messenger\Test\Transport;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerRunningEvent;
@@ -32,6 +33,9 @@ final class TestTransport implements TransportInterface
     private MessageBusInterface $bus;
     private SerializerInterface $serializer;
 
+    /** @var EventSubscriberInterface[] */
+    private array $subscribersToRemove;
+
     /** @var array<string, bool> */
     private static array $intercept = [];
 
@@ -59,16 +63,24 @@ final class TestTransport implements TransportInterface
     /**
      * @internal
      *
-     * @param array<string,bool> $options
+     * @param EventSubscriberInterface[] $subscribersToRemove
+     * @param array<string,bool>         $options
      */
-    public function __construct(string $name, MessageBusInterface $bus, EventDispatcherInterface $dispatcher, SerializerInterface $serializer, array $options = [])
-    {
+    public function __construct(
+        string $name,
+        MessageBusInterface $bus,
+        EventDispatcherInterface $dispatcher,
+        SerializerInterface $serializer,
+        array $subscribersToRemove,
+        array $options = []
+    ) {
         $options = \array_merge(self::DEFAULT_OPTIONS, $options);
 
         $this->name = $name;
         $this->dispatcher = $dispatcher;
         $this->bus = $bus;
         $this->serializer = $serializer;
+        $this->subscribersToRemove = $subscribersToRemove;
 
         self::$intercept[$name] ??= $options['intercept'];
         self::$catchExceptions[$name] ??= $options['catch_exceptions'];
@@ -131,6 +143,11 @@ final class TestTransport implements TransportInterface
         $listeners = [];
         $subscribers = [];
 
+        // remove default subscribers
+        foreach ($this->subscribersToRemove as $subscriber) {
+            $this->dispatcher->removeSubscriber($subscriber);
+        }
+
         $this->dispatcher->addListener(
             WorkerRunningEvent::class,
             $listeners[WorkerRunningEvent::class] = static function(WorkerRunningEvent $event) use (&$processCount) {
@@ -169,6 +186,11 @@ final class TestTransport implements TransportInterface
 
         foreach ($subscribers as $subscriber) {
             $this->dispatcher->removeSubscriber($subscriber);
+        }
+
+        // re-add default subscribers
+        foreach ($this->subscribersToRemove as $subscriber) {
+            $this->dispatcher->addSubscriber($subscriber);
         }
 
         if ($number > 0) {

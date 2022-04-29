@@ -3,6 +3,7 @@
 namespace Zenstruck\Messenger\Test\Transport;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
@@ -18,6 +19,9 @@ final class TestTransportFactory implements TransportFactoryInterface
     private MessageBusInterface $bus;
     private EventDispatcherInterface $dispatcher;
 
+    /** @var EventSubscriberInterface[] */
+    private array $subscribersToRemove = [];
+
     public function __construct(MessageBusInterface $bus, EventDispatcherInterface $dispatcher)
     {
         $this->bus = $bus;
@@ -26,12 +30,24 @@ final class TestTransportFactory implements TransportFactoryInterface
 
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface // @phpstan-ignore-line
     {
-        return new TestTransport($options['transport_name'], $this->bus, $this->dispatcher, $serializer, $this->parseDsn($dsn));
+        return new TestTransport(
+            $options['transport_name'],
+            $this->bus,
+            $this->dispatcher,
+            $serializer,
+            $this->subscribersToRemove,
+            $this->parseDsn($dsn)
+        );
     }
 
     public function supports(string $dsn, array $options): bool // @phpstan-ignore-line
     {
         return 0 === \mb_strpos($dsn, 'test://');
+    }
+
+    public function registerSubscriberToRemove(EventSubscriberInterface $subscriber): void
+    {
+        $this->subscribersToRemove[] = $subscriber;
     }
 
     /**
