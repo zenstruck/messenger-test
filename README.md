@@ -1,7 +1,6 @@
 # zenstruck/messenger-test
 
 [![CI Status](https://github.com/zenstruck/messenger-test/workflows/CI/badge.svg)](https://github.com/zenstruck/messenger-test/actions?query=workflow%3ACI)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/zenstruck/messenger-test/badges/quality-score.png?b=1.x)](https://scrutinizer-ci.com/g/zenstruck/messenger-test/?branch=1.x)
 [![Code Coverage](https://codecov.io/gh/zenstruck/messenger-test/branch/1.x/graph/badge.svg?token=R7OHYYGPKM)](https://codecov.io/gh/zenstruck/messenger-test)
 
 Assertions and helpers for testing your `symfony/messenger` queues.
