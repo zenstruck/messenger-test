@@ -19,16 +19,19 @@ The transport also allows for processing these *queued* messages.
     composer require --dev zenstruck/messenger-test
     ```
 
-2. Create a `config/packages/test/messenger.yaml` and override your transport(s)
-with `test://`:
+2. Update `config/packages/messenger.yaml` and override your transport(s)
+in your `test` environment with `test://`:
 
     ```yaml
-    # config/packages/test/messenger.yaml
+    # config/packages/messenger.yaml
 
-    framework:
-        messenger:
-            transports:
-                async: test://
+    # ...
+
+    when@test:
+        framework:
+            messenger:
+                transports:
+                    async: test://
     ```
 
 ## Usage
@@ -215,12 +218,15 @@ class MyTest extends KernelTestCase // or WebTestCase
 You can enable exception throwing for your transport(s) by default in the transport dsn:
 
 ```yaml
-# config/packages/test/messenger.yaml
+# config/packages/messenger.yaml
 
-framework:
-    messenger:
-        transports:
-            async: test://?catch_exceptions=false
+# ...
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: test://?catch_exceptions=false
  ```
 
 ### Unblock Mode
@@ -259,12 +265,15 @@ class MyTest extends KernelTestCase // or WebTestCase
 You can disable intercepting messages for your transport(s) by default in the transport dsn:
 
 ```yaml
-# config/packages/test/messenger.yaml
+# config/packages/messenger.yaml
 
-framework:
-    messenger:
-        transports:
-            async: test://?intercept=false
+# ...
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: test://?intercept=false
 ```
 
 ### Testing Serialization
@@ -273,12 +282,15 @@ By default, the `TestTransport` tests that messages can be serialized and deseri
 This behavior can be disabled with the transport dsn:
 
 ```yaml
-# config/packages/test/messenger.yaml
+# config/packages/messenger.yaml
 
-framework:
-    messenger:
-        transports:
-            async: test://?test_serialization=false
+# ...
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: test://?test_serialization=false
 ```
 
 ### Enable Retries
@@ -287,12 +299,15 @@ By default, the `TestTransport` does not retry failed messages (your retry setti
 are ignored). This behavior can be disabled with the transport dsn:
 
 ```yaml
-# config/packages/test/messenger.yaml
+# config/packages/messenger.yaml
 
-framework:
-    messenger:
-        transports:
-            async: test://?disable_retries=false
+# ...
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: test://?disable_retries=false
 ```
 
 ### Multiple Transports
@@ -301,13 +316,16 @@ If you have multiple transports you'd like to test, change all their dsn's to
 `test://` in your test environment:
 
 ```yaml
-# config/packages/test/messenger.yaml
+# config/packages/messenger.yaml
 
-framework:
-    messenger:
-        transports:
-            low: test://
-            high: test://
+# ...
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                low: test://
+                high: test://
 ```
 
 In your tests, pass the name to the `messenger()` method:
