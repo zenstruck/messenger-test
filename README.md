@@ -345,3 +345,27 @@ class MyTest extends KernelTestCase // or WebTestCase
     }
 }
 ```
+
+## Troubleshooting
+
+### Detached Doctrine Entities
+
+When processing messages in your tests that interact with Doctrine entities you may
+notice they become detached from the object manager after processing. This is because
+of [`DoctrineClearEntityManagerWorkerSubscriber`](https://github.com/symfony/symfony/blob/0e9cfc38e81464d9394ac6fa061e7962a6fe485d/src/Symfony/Bridge/Doctrine/Messenger/DoctrineClearEntityManagerWorkerSubscriber.php)
+which clears the object managers after a message is processed. Currently, the only
+way to disable this functionality is to disable the service in your `test` environment:
+
+```yaml
+# config/packages/messenger.yaml
+
+# ...
+
+when@test:
+    # ...
+
+    services:
+        # DoctrineClearEntityManagerWorkerSubscriber service
+        doctrine.orm.messenger.event_subscriber.doctrine_clear_entity_manager:
+            class: stdClass # effectively disables this service in your test env
+```
