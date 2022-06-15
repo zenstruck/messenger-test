@@ -797,6 +797,20 @@ final class InteractsWithMessengerTest extends WebTestCase
         ;
     }
 
+    /**
+     * @test
+     */
+    public function process_empty_queue(): void
+    {
+        self::bootKernel();
+
+        $this->messenger()
+            ->process()
+            ->dispatched()
+            ->assertEmpty()
+        ;
+    }
+
     protected static function bootKernel(array $options = []): KernelInterface // @phpstan-ignore-line
     {
         return parent::bootKernel(\array_merge(['environment' => 'single_transport'], $options));
