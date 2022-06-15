@@ -213,7 +213,11 @@ final class TestTransport implements TransportInterface
      */
     public function get(): iterable
     {
-        return self::$queue[$this->name] ? [\array_shift(self::$queue[$this->name])] : [];
+        if (!isset(self::$queue[$this->name]) || !self::$queue[$this->name]) {
+            return [];
+        }
+
+        return [\array_shift(self::$queue[$this->name])];
     }
 
     /**
