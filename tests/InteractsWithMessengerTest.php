@@ -11,6 +11,7 @@ use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\SerializerStamp;
+use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 use Zenstruck\Assert;
 use Zenstruck\Messenger\Test\InteractsWithMessenger;
 use Zenstruck\Messenger\Test\TestEnvelope;
@@ -582,7 +583,7 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
-    public function can_manually_send_message_to_transport_and_process(): void
+    public function can_manually_send_envelope_to_transport_and_process(): void
     {
         self::bootKernel();
 
@@ -590,6 +591,50 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertEmpty(self::getContainer()->get(MessageAHandler::class)->messages);
 
         $this->messenger()->send(Envelope::wrap(new MessageA()));
+
+        $this->messenger()->queue()->assertCount(1);
+        $this->assertEmpty(self::getContainer()->get(MessageAHandler::class)->messages);
+
+        $this->messenger()->process();
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->assertCount(1, self::getContainer()->get(MessageAHandler::class)->messages);
+    }
+
+    /**
+     * @test
+     */
+    public function can_manually_send_message_to_transport_and_process(): void
+    {
+        self::bootKernel();
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->assertEmpty(self::getContainer()->get(MessageAHandler::class)->messages);
+
+        $this->messenger()->send(new MessageA());
+
+        $this->messenger()->queue()->assertCount(1);
+        $this->assertEmpty(self::getContainer()->get(MessageAHandler::class)->messages);
+
+        $this->messenger()->process();
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->assertCount(1, self::getContainer()->get(MessageAHandler::class)->messages);
+    }
+
+    /**
+     * @test
+     */
+    public function can_manually_send_a_serialized_message_to_transport_and_process(): void
+    {
+        self::bootKernel();
+
+        $this->messenger()->queue()->assertEmpty();
+        $this->assertEmpty(self::getContainer()->get(MessageAHandler::class)->messages);
+
+        $message = (new PhpSerializer())->encode(Envelope::wrap(new MessageA()));
+
+        $this->messenger()->send($message);
 
         $this->messenger()->queue()->assertCount(1);
         $this->assertEmpty(self::getContainer()->get(MessageAHandler::class)->messages);

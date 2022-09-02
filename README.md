@@ -119,7 +119,13 @@ class MyTest extends KernelTestCase // or WebTestCase
     public function test_something(): void
     {
         // manually send a message to your transport
-        $this->messenger()->send(Envelope::wrap(new MyMessage()));
+        $this->messenger()->send(new MyMessage());
+
+        // send with stamps
+        $this->messenger()->send(Envelope::wrap(new MyMessage(), [new SomeStamp()]));
+
+        // send "pre-encoded" message
+        $this->messenger()->send(['body' => '...']);
 
         $queue = $this->messenger()->queue();
         $dispatched = $this->messenger()->dispatched();
