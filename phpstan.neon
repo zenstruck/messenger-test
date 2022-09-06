@@ -2,24 +2,3 @@ parameters:
     level: 8
     paths:
         - src
-        - tests
-    ignoreErrors:
-        # This is expected as NonKernelTestCaseTest does not extend KernelTestCase
-        - '#undefined static property|method Zenstruck\\Messenger\\Test\\Tests\\NonKernelTestCaseTest#'
-
-        # Symfony container-related
-        - message: "#^Cannot call method dispatch\\(\\) on object\\|null\\.$#"
-          count: 1
-          path: tests/Fixture/Kernel.php
-        - message: "#^Access to an undefined property object\\:\\:\\$fail\\.$#"
-          count: 1
-          path: tests/InteractsWithMessengerTest.php
-        - message: "#^Cannot access property \\$messages on object\\|null\\.$#"
-          count: 24
-          path: tests/InteractsWithMessengerTest.php
-        - message: "#^Cannot call method addListener\\(\\) on object\\|null\\.$#"
-          count: 1
-          path: tests/InteractsWithMessengerTest.php
-        - message: "#^Cannot call method dispatch\\(\\) on object\\|null\\.$#"
-          count: 48
-          path: tests/InteractsWithMessengerTest.php

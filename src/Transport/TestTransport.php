@@ -236,8 +236,22 @@ final class TestTransport implements TransportInterface
         self::$rejected[$this->name][] = $envelope;
     }
 
-    public function send(Envelope $envelope): Envelope
+    /**
+     * @param Envelope|object|array{headers?:mixed[],body:string} $what object: will be wrapped in envelope
+     *                                                                  array: will be decoded into envelope
+     */
+    public function send($what): Envelope
     {
+        if (\is_array($what)) {
+            $what = $this->serializer->decode($what);
+        }
+
+        if (!\is_object($what)) {
+            throw new \InvalidArgumentException(\sprintf('"%s()" requires a message/Envelope object or decoded message array. "%s" given.', __METHOD__, get_debug_type($what)));
+        }
+
+        $envelope = Envelope::wrap($what);
+
         if ($this->isRetriesDisabled() && $envelope->last(RedeliveryStamp::class)) {
             // message is being retried, don't process
             return $envelope;

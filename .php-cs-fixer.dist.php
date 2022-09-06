@@ -43,6 +43,16 @@ return $config
         'phpdoc_to_comment' => false,
         'function_declaration' => ['closure_function_spacing' => 'none'],
         'nullable_type_declaration_for_default_null_value' => true,
+        'phpdoc_separation' => ['groups' => [
+            ['test', 'dataProvider'],
+            ['before', 'after'],
+            ['template', 'implements', 'extends'],
+            ['phpstan-type', 'phpstan-import-type'],
+            ['deprecated', 'link', 'see', 'since'],
+            ['author', 'copyright', 'license', 'source'],
+            ['category', 'package', 'subpackage'],
+            ['property', 'property-read', 'property-write'],
+        ]],
     ])
     ->setRiskyAllowed(true)
     ->setFinder($finder)
