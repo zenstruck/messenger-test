@@ -1,0 +1,8 @@
+imports:
+    - { resource: test.yaml }
+    - { resource: single_transport.yaml }
+
+services:
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\Receiver\RandomReceiver:
+        tags:
+            - { name: messenger.receiver }

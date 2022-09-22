@@ -25,6 +25,7 @@ use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageE;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageF;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageG;
 use Zenstruck\Messenger\Test\Tests\Fixture\NoBundleKernel;
+use Zenstruck\Messenger\Test\Transport\TestTransport;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
@@ -32,6 +33,17 @@ use Zenstruck\Messenger\Test\Tests\Fixture\NoBundleKernel;
 final class InteractsWithMessengerTest extends WebTestCase
 {
     use InteractsWithMessenger;
+
+    /**
+     * @test
+     */
+    public function ignore_receiver_detached_from_transport(): void
+    {
+        self::bootKernel(['environment' => 'with_receiver_detached']);
+
+        $transport = $this->messenger();
+        $this->assertInstanceOf(TestTransport::class, $transport);
+    }
 
     /**
      * @test
