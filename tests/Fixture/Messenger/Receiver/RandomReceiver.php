@@ -8,26 +8,15 @@ use Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface;
 
 class RandomReceiver implements ReceiverInterface
 {
-    /**
-     * @return Envelope[]
-     *
-     * @throws TransportException
-     */
     public function get(): iterable
     {
         yield;
     }
 
-    /**
-     * @throws TransportException
-     */
     public function ack(Envelope $envelope): void
     {
     }
 
-    /**
-     * @throws TransportException
-     */
     public function reject(Envelope $envelope): void
     {
     }
