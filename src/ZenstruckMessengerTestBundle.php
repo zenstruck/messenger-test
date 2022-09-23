@@ -7,6 +7,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
+use Symfony\Component\Messenger\Transport\TransportInterface;
 use Zenstruck\Messenger\Test\Transport\TestTransportFactory;
 use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
 
@@ -40,6 +41,14 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
 
         foreach ($container->findTaggedServiceIds('messenger.receiver') as $id => $tags) {
             $name = $id;
+
+            if (!$class = $container->getDefinition($name)->getClass()) {
+                continue;
+            }
+
+            if (!\is_a($class, TransportInterface::class, true)) {
+                continue;
+            }
 
             foreach ($tags as $tag) {
                 if (isset($tag['alias'])) {
