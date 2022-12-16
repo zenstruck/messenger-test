@@ -2,12 +2,10 @@
 
 namespace Zenstruck\Messenger\Test\Tests\Fixture\Messenger;
 
-use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
-
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
-final class MessageCHandler implements MessageHandlerInterface
+final class MessageCHandler
 {
     /** @var MessageC[] */
     public array $messages = [];

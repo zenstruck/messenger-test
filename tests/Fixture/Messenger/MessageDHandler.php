@@ -2,13 +2,12 @@
 
 namespace Zenstruck\Messenger\Test\Tests\Fixture\Messenger;
 
-use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
-final class MessageDHandler implements MessageHandlerInterface
+final class MessageDHandler
 {
     private MessageBusInterface $bus;
 
