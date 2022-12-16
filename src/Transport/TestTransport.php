@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of the zenstruck/messenger-test package.
+ *
+ * (c) Kevin Bond <kevinbond@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Zenstruck\Messenger\Test\Transport;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -247,7 +256,7 @@ final class TestTransport implements TransportInterface
         }
 
         if (!\is_object($what)) {
-            throw new \InvalidArgumentException(\sprintf('"%s()" requires a message/Envelope object or decoded message array. "%s" given.', __METHOD__, \get_debug_type($what)));
+            throw new \InvalidArgumentException(\sprintf('"%s()" requires a message/Envelope object or decoded message array. "%s" given.', __METHOD__, get_debug_type($what)));
         }
 
         $envelope = Envelope::wrap($what);
