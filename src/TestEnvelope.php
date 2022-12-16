@@ -3,6 +3,7 @@
 namespace Zenstruck\Messenger\Test;
 
 use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Stamp\StampInterface;
 use Zenstruck\Assert;
 
 /**
@@ -29,6 +30,9 @@ final class TestEnvelope
         return $this->envelope->{$name}(...$arguments);
     }
 
+    /**
+     * @param class-string<StampInterface> $class
+     */
     public function assertHasStamp(string $class): self
     {
         Assert::that($this->envelope->all($class))->isNotEmpty(
@@ -39,6 +43,9 @@ final class TestEnvelope
         return $this;
     }
 
+    /**
+     * @param class-string<StampInterface> $class
+     */
     public function assertNotHasStamp(string $class): self
     {
         Assert::that($this->envelope->all($class))->isEmpty(

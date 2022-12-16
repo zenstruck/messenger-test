@@ -4,13 +4,20 @@ services:
         autoconfigure: true
         public: true
 
-    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageAHandler: ~
-    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageBHandler: ~
-    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageCHandler: ~
-    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageDHandler: ~
-    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageEHandler: ~
-    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageFHandler: ~
-    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageGHandler: ~
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageAHandler:
+        tags: [messenger.message_handler]
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageBHandler:
+        tags: [messenger.message_handler]
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageCHandler:
+        tags: [messenger.message_handler]
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageDHandler:
+        tags: [messenger.message_handler]
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageEHandler:
+        tags: [messenger.message_handler]
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageFHandler:
+        tags: [messenger.message_handler]
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageGHandler:
+        tags: [messenger.message_handler]
 
     message_bus:
         alias: Symfony\Component\Messenger\MessageBusInterface
