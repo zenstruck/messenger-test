@@ -62,7 +62,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::bootKernel();
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
-        dump($this->bus()->messages());
+        dump($this->bus()->dispatched());
     }
 
     /**

@@ -17,7 +17,7 @@ final class TestBus implements MessageBusInterface
     }
 
     /** @return object[] */
-    public function messages(): array
+    public function dispatched(): array
     {
         return $this->messages;
     }

@@ -12,6 +12,7 @@
 namespace Zenstruck\Messenger\Test;
 
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Zenstruck\Messenger\Test\Bus\TestBus;
 use Zenstruck\Messenger\Test\Bus\TestBusRegistry;
 use Zenstruck\Messenger\Test\Transport\TestTransport;
@@ -65,8 +66,7 @@ trait InteractsWithMessenger
     final protected function messenger(?string $transport = null): TestTransport
     {
         $this->init();
-
-        $container = \method_exists($this, 'getContainer') ? self::getContainer() : self::$container;
+        $container = self::getContainer();
 
         if (!$container->has('zenstruck_messenger_test.transport_registry')) {
             throw new \LogicException('Cannot access transport - is ZenstruckMessengerTestBundle enabled in your test environment?');
@@ -81,8 +81,7 @@ trait InteractsWithMessenger
     final protected function bus(?string $bus = null): TestBus
     {
         $this->init();
-
-        $container = \method_exists($this, 'getContainer') ? self::getContainer() : self::$container;
+        $container = self::getContainer();
 
         if (!$container->has('zenstruck_messenger_test.bus_registry')) {
             throw new \LogicException('Cannot access bus - is ZenstruckMessengerTestBundle enabled in your test environment?');
@@ -92,6 +91,15 @@ trait InteractsWithMessenger
         $registry = $container->get('zenstruck_messenger_test.bus_registry');
 
         return $registry->get($bus);
+    }
+
+    protected static function getContainer(): ContainerInterface
+    {
+        if (\method_exists(parent::class, 'getContainer')) {
+            return parent::getContainer();
+        }
+
+        return self::$container;
     }
 
     private function init(): void
