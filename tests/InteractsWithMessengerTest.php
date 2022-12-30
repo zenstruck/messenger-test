@@ -57,6 +57,17 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
+    public function can_detect_buses()
+    {
+        self::bootKernel();
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+        dump($this->bus()->messages());
+    }
+
+    /**
+     * @test
+     */
     public function can_interact_with_queue(): void
     {
         self::bootKernel();
