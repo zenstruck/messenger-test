@@ -17,6 +17,7 @@ use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\Messenger\Transport\TransportInterface;
+use Zenstruck\Messenger\Test\Bus\TestBusRegistry;
 use Zenstruck\Messenger\Test\Transport\TestTransportFactory;
 use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
 
@@ -33,6 +34,10 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
         ;
 
         $container->register('zenstruck_messenger_test.transport_registry', TestTransportRegistry::class)
+            ->setPublic(true)
+        ;
+
+        $container->register('zenstruck_messenger_test.bus_registry', TestBusRegistry::class)
             ->setPublic(true)
         ;
 
