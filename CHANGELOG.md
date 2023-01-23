@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [v1.6.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.6.0)
+
+January 23rd, 2023 - [v1.5.1...v1.6.0](https://github.com/zenstruck/messenger-test/compare/v1.5.1...v1.6.0)
+
+* fb0bb0c feat: enable messages collection (#55) by @nikophil
+* 7fb455d fix(ci): add token by @kbond
+* 508f890 chore(ci): fix by @kbond
+* 416f086 fix(test): deprecation (#53) by @kbond
+* 885fbd8 ci: adjust (#53) by @kbond
+
 ## [v1.5.1](https://github.com/zenstruck/messenger-test/releases/tag/v1.5.1)
 
 September 23rd, 2022 - [v1.5.0...v1.5.1](https://github.com/zenstruck/messenger-test/compare/v1.5.0...v1.5.1)
