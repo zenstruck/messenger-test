@@ -23,7 +23,10 @@ use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
  */
 final class NotInteractsWithMessengerTest extends KernelTestCase
 {
-    public function test_it_dispatches_a_message(): void
+    /**
+     * @test
+     */
+    public function it_dispatches_a_message(): void
     {
         /** @var TestTransportRegistry $registry */
         $registry = self::getContainer()->get('zenstruck_messenger_test.transport_registry');

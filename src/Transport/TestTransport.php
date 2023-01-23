@@ -259,7 +259,7 @@ final class TestTransport implements TransportInterface
         }
 
         if (!\is_object($what)) {
-            throw new \InvalidArgumentException(\sprintf('"%s()" requires a message/Envelope object or decoded message array. "%s" given.', __METHOD__, get_debug_type($what)));
+            throw new \InvalidArgumentException(\sprintf('"%s()" requires a message/Envelope object or decoded message array. "%s" given.', __METHOD__, \get_debug_type($what)));
         }
 
         $envelope = Envelope::wrap($what);

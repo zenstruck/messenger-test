@@ -130,7 +130,7 @@ final class EnvelopeCollection implements \IteratorAggregate, \Countable
             return $messages;
         }
 
-        return \array_values(\array_filter($messages, static fn(object $message) => $class === \get_class($message)));
+        return \array_values(\array_filter($messages, static fn(object $message) => $class === $message::class));
     }
 
     /**
