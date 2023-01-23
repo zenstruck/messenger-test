@@ -18,6 +18,11 @@
     <testsuites>
         <testsuite name="zenstruck/messenger-test Test Suite">
             <directory>./tests/</directory>
+            <exclude>./tests/TransportsAreResetCorrectly</exclude>
+        </testsuite>
+        <testsuite name="zenstruck/messenger-test transports are reset correctly">
+            <file>./tests/TransportsAreResetCorrectly/NotInteractsWithMessengerTest.php</file>
+            <file>./tests/TransportsAreResetCorrectly/AfterNotInteractsWithMessengerTest.php</file>
         </testsuite>
     </testsuites>
 

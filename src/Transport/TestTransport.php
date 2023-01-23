@@ -65,6 +65,9 @@ final class TestTransport implements TransportInterface
     /** @var array<string, Envelope[]> */
     private static array $queue = [];
 
+    // this setting applies to all transports
+    private static bool $enableMessagesCollection = true;
+
     /**
      * @internal
      *
@@ -234,7 +237,7 @@ final class TestTransport implements TransportInterface
      */
     public function ack(Envelope $envelope): void
     {
-        self::$acknowledged[$this->name][] = $envelope;
+        $this->collectMessage(self::$acknowledged, $envelope);
     }
 
     /**
@@ -242,7 +245,7 @@ final class TestTransport implements TransportInterface
      */
     public function reject(Envelope $envelope): void
     {
-        self::$rejected[$this->name][] = $envelope;
+        $this->collectMessage(self::$rejected, $envelope);
     }
 
     /**
@@ -273,8 +276,8 @@ final class TestTransport implements TransportInterface
             );
         }
 
-        self::$dispatched[$this->name][] = $envelope;
-        self::$queue[$this->name][] = $envelope;
+        $this->collectMessage(self::$dispatched, $envelope);
+        $this->collectMessage(self::$queue, $envelope);
 
         if (!$this->isIntercepting()) {
             $this->process();
@@ -297,6 +300,29 @@ final class TestTransport implements TransportInterface
     public static function resetAll(): void
     {
         self::$queue = self::$dispatched = self::$acknowledged = self::$rejected = self::$intercept = self::$catchExceptions = [];
+    }
+
+    public static function enableMessagesCollection(): void
+    {
+        self::$enableMessagesCollection = true;
+    }
+
+    public static function disableMessagesCollection(): void
+    {
+        self::$enableMessagesCollection = false;
+    }
+
+    /**
+     * @param array<string, Envelope[]> $messagesCollection
+     */
+    private function collectMessage(array &$messagesCollection, Envelope $envelope): void
+    {
+        if (!self::$enableMessagesCollection) {
+            return;
+        }
+
+        $messagesCollection[$this->name] ??= [];
+        $messagesCollection[$this->name][] = $envelope;
     }
 
     private function isIntercepting(): bool
