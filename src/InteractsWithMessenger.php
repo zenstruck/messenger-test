@@ -24,6 +24,25 @@ trait InteractsWithMessenger
      * @internal
      *
      * @before
+     */
+    final protected static function _enableMessagesCollection(): void
+    {
+        TestTransport::enableMessagesCollection();
+    }
+
+    /**
+     * @internal
+     *
+     * @after
+     */
+    final protected static function _disableMessagesCollection(): void
+    {
+        TestTransport::disableMessagesCollection();
+    }
+
+    /**
+     * @internal
+     *
      * @after
      */
     final protected static function _resetMessengerTransports(): void
