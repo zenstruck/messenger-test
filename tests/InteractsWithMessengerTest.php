@@ -892,13 +892,4 @@ final class InteractsWithMessengerTest extends WebTestCase
     {
         return parent::bootKernel(\array_merge(['environment' => 'single_transport'], $options));
     }
-
-    protected static function getContainer(): ContainerInterface
-    {
-        if (\method_exists(parent::class, 'getContainer')) {
-            return parent::getContainer();
-        }
-
-        return self::$container;
-    }
 }

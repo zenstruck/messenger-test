@@ -76,7 +76,7 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
 
         $busRegistry = $container->getDefinition('zenstruck_messenger_test.bus_registry');
         foreach ($container->findTaggedServiceIds('messenger.bus') as $id => $tags) {
-            $name = $this->generateAliasName($id);
+            $name = "$id.test-bus";
             $busRegistry->addMethodCall('register', [$name, new Reference($name)]);
             $container->register($name, TestBus::class)
                 ->setAutowired(true)
@@ -84,17 +84,5 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
                 ->setDecoratedService($id)
             ;
         }
-    }
-
-    private function generateAliasName(string $id): string
-    {
-        if (false !== strpos($id, '\\')) {
-            $parts = explode('\\', $id);
-            $className = end($parts);
-
-            return strtolower(preg_replace('/[A-Z]/', '_\\0', lcfirst($className))).'_decorator';
-        }
-
-        return $id.'_decorator';
     }
 }

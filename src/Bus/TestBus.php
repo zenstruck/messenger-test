@@ -8,7 +8,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 final class TestBus implements MessageBusInterface
 {
     private MessageBusInterface $decorated;
-    /** @var object[] */
+    /** @var list<Envelope> */
     private array $messages = [];
 
     public function __construct(MessageBusInterface $decorated)
@@ -16,7 +16,7 @@ final class TestBus implements MessageBusInterface
         $this->decorated = $decorated;
     }
 
-    /** @return object[] */
+    /** @return list<Envelope> */
     public function dispatched(): array
     {
         return $this->messages;
