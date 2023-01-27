@@ -19,10 +19,9 @@ final class TestBus implements MessageBusInterface
         $this->decorated = $decorated;
     }
 
-    /** @return list<Envelope> */
-    public function dispatched(): array
+    public function dispatched(): BusEnvelope
     {
-        return self::$messages;
+        return new BusEnvelope($this, ...self::$messages);
     }
 
     public function dispatch(object $message, array $stamps = []): Envelope
