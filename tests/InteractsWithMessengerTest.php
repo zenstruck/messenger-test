@@ -74,6 +74,8 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::bootKernel();
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+        $this->bus('messenger.bus.default.test-bus')->dispatched()
+            ->assertContains(MessageA::class, 1);
     }
 
     /**

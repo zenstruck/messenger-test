@@ -41,6 +41,7 @@ trait InteractsWithMessenger
     final protected static function _enableMessagesCollection(): void
     {
         TestTransport::enableMessagesCollection();
+        TestBus::enableMessagesCollection();
     }
 
     /**
@@ -51,6 +52,7 @@ trait InteractsWithMessenger
     final protected static function _disableMessagesCollection(): void
     {
         TestTransport::disableMessagesCollection();
+        TestBus::disableMessagesCollection();
     }
 
     /**
@@ -61,6 +63,7 @@ trait InteractsWithMessenger
     final protected static function _resetMessengerTransports(): void
     {
         TestTransport::resetAll();
+        TestBus::resetAll();
     }
 
     /**
