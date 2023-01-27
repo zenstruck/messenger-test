@@ -7,6 +7,8 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final class TestBus implements MessageBusInterface
 {
+    private string $name;
+
     private MessageBusInterface $decorated;
     /** @var list<Envelope> */
     private static array $messages = [];
@@ -14,14 +16,15 @@ final class TestBus implements MessageBusInterface
     // The setting applies to all buses
     private static bool $enableMessagesCollection = true;
 
-    public function __construct(MessageBusInterface $decorated)
+    public function __construct(string $name, MessageBusInterface $decorated)
     {
+        $this->name = $name;
         $this->decorated = $decorated;
     }
 
     public function dispatched(): BusEnvelopeCollection
     {
-        return new BusEnvelopeCollection($this, ...self::$messages);
+        return new BusEnvelopeCollection($this, ...self::$messages[$this->name] ?? []);
     }
 
     public function dispatch(object $message, array $stamps = []): Envelope
@@ -29,7 +32,7 @@ final class TestBus implements MessageBusInterface
         $envelope = $this->decorated->dispatch($message, $stamps);
 
         if (self::$enableMessagesCollection) {
-            self::$messages[] = $envelope;
+            self::$messages[$this->name][] = $envelope;
         }
 
         return $envelope;

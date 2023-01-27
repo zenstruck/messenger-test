@@ -81,6 +81,7 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
             $container->register($name, TestBus::class)
                 ->setAutowired(true)
                 ->setPublic(true)
+                ->setArgument('$name', $id)
                 ->setDecoratedService($id)
             ;
         }
