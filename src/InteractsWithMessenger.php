@@ -103,15 +103,6 @@ trait InteractsWithMessenger
         return $registry->get($bus);
     }
 
-    protected static function getContainer(): ContainerInterface
-    {
-        if (\method_exists(parent::class, 'getContainer')) {
-            return parent::getContainer();
-        }
-
-        return self::$container;
-    }
-
     private function init(): void
     {
         if (!$this instanceof KernelTestCase) {
