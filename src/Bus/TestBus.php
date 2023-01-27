@@ -9,7 +9,7 @@ final class TestBus implements MessageBusInterface
 {
     private MessageBusInterface $decorated;
     /** @var list<Envelope> */
-    private array $messages = [];
+    private static array $messages = [];
 
     public function __construct(MessageBusInterface $decorated)
     {
@@ -19,12 +19,12 @@ final class TestBus implements MessageBusInterface
     /** @return list<Envelope> */
     public function dispatched(): array
     {
-        return $this->messages;
+        return self::$messages;
     }
 
     public function dispatch(object $message, array $stamps = []): Envelope
     {
-        $this->messages[] = $envelope = $this->decorated->dispatch($message, $stamps);
+        self::$messages[] = $envelope = $this->decorated->dispatch($message, $stamps);
 
         return $envelope;
     }
