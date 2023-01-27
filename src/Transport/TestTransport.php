@@ -202,22 +202,22 @@ final class TestTransport implements TransportInterface
 
     public function queue(): EnvelopeCollection
     {
-        return new TransportEnvelope($this, ...self::$queue[$this->name] ?? []);
+        return new TransportEnvelopeCollection($this, ...self::$queue[$this->name] ?? []);
     }
 
     public function dispatched(): EnvelopeCollection
     {
-        return new TransportEnvelope($this, ...self::$dispatched[$this->name] ?? []);
+        return new TransportEnvelopeCollection($this, ...self::$dispatched[$this->name] ?? []);
     }
 
     public function acknowledged(): EnvelopeCollection
     {
-        return new TransportEnvelope($this, ...self::$acknowledged[$this->name] ?? []);
+        return new TransportEnvelopeCollection($this, ...self::$acknowledged[$this->name] ?? []);
     }
 
     public function rejected(): EnvelopeCollection
     {
-        return new TransportEnvelope($this, ...self::$rejected[$this->name] ?? []);
+        return new TransportEnvelopeCollection($this, ...self::$rejected[$this->name] ?? []);
     }
 
     /**

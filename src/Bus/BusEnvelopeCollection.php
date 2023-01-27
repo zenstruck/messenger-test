@@ -5,7 +5,7 @@ namespace Zenstruck\Messenger\Test\Bus;
 use Symfony\Component\Messenger\Envelope;
 use Zenstruck\Messenger\Test\EnvelopeCollection;
 
-final class BusEnvelope extends EnvelopeCollection
+final class BusEnvelopeCollection extends EnvelopeCollection
 {
     private TestBus $bus;
 
