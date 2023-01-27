@@ -45,7 +45,7 @@ final class InteractsWithMessengerTest extends WebTestCase
 
     /**
      * @test
-     * @legacy
+     * @group legacy
      */
     public function messenger_is_deprecated(): void
     {
