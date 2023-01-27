@@ -23,7 +23,7 @@ use Zenstruck\Messenger\Test\Transport\TestTransport;
 abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
 {
     /** @var Envelope[] */
-    protected array $envelopes;
+    private array $envelopes;
 
     /**
      * @internal
