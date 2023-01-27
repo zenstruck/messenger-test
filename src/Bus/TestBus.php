@@ -28,4 +28,12 @@ final class TestBus implements MessageBusInterface
 
         return $envelope;
     }
+
+    /**
+     * Resets data and options for all buses.
+     */
+    public static function resetAll(): void
+    {
+        self::$messages = [];
+    }
 }
