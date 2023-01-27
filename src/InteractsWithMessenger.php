@@ -71,7 +71,7 @@ trait InteractsWithMessenger
      */
     final protected function messenger(?string $transport = null): TestTransport
     {
-        trigger_deprecation('zenstruck/messenger-test', '1.7.0', '"messenger()" method is deprecated and will be removed in 2.0. Please use "transport()" instead."');
+        trigger_deprecation('zenstruck/messenger-test', '1.7.0', '"messenger()" method is deprecated and will be removed in 2.0. Please use "transport()" instead.');
 
         return $this->transport($transport);
     }

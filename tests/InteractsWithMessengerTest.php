@@ -49,7 +49,7 @@ final class InteractsWithMessengerTest extends WebTestCase
      */
     public function messenger_is_deprecated(): void
     {
-        self::bootKernel(['environment' => 'with_receiver_detached']);
+        self::bootKernel();
 
         $transport = $this->messenger();
         $this->assertInstanceOf(TestTransport::class, $transport);
