@@ -6,7 +6,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final class TestBusRegistry
 {
-    /** @var MessageBusInterface[] */
+    /** @var array<string, MessageBusInterface> */
     private array $buses = [];
 
     public function register(string $name, MessageBusInterface $bus): void
