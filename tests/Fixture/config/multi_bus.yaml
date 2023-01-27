@@ -1,0 +1,18 @@
+imports:
+    - { resource: test.yaml }
+
+services:
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageAHandler:
+        tags:
+            - { name: messenger.message_handler, bus: bus_a }
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageBHandler:
+        tags:
+            - { name: messenger.message_handler, bus: bus_b }
+
+framework:
+    messenger:
+        default_bus: bus_c
+        buses:
+            bus_a: ~
+            bus_b: ~
+            bus_c: ~

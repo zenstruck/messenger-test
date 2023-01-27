@@ -22,6 +22,7 @@ use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\SerializerStamp;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 use Zenstruck\Assert;
+use Zenstruck\Messenger\Test\Bus\TestBus;
 use Zenstruck\Messenger\Test\InteractsWithMessenger;
 use Zenstruck\Messenger\Test\TestEnvelope;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA;
@@ -69,13 +70,33 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
-    public function can_detect_buses()
+    public function can_interact_with_buses()
     {
         self::bootKernel();
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
         $this->bus('messenger.bus.default.test-bus')->dispatched()
             ->assertContains(MessageA::class, 1);
+    }
+
+    /**
+     * @test
+     */
+    public function interacts_with_specified_bus(): void
+    {
+        self::bootKernel(['environment' => 'multi_bus']);
+
+        $this->bus('bus_a.test-bus')->dispatched()->assertEmpty();
+        $this->bus('bus_b.test-bus')->dispatched()->assertEmpty();
+        $this->bus('bus_c.test-bus')->dispatched()->assertEmpty();
+
+        self::getContainer()->get('bus_a.test-bus')->dispatch(new MessageA());
+        self::getContainer()->get('bus_b.test-bus')->dispatch(new MessageB());
+        self::getContainer()->get('bus_c.test-bus')->dispatch(new MessageC());
+
+        $this->bus('bus_a.test-bus')->dispatched()->assertContains(MessageA::class, 1);
+        $this->bus('bus_b.test-bus')->dispatched()->assertContains(MessageB::class, 1);
+        $this->bus('bus_c.test-bus')->dispatched()->assertContains(MessageC::class, 1);
     }
 
     /**
