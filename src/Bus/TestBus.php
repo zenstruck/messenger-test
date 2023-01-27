@@ -27,7 +27,11 @@ final class TestBus implements MessageBusInterface
 
     public function dispatch(object $message, array $stamps = []): Envelope
     {
-        self::$messages[] = $envelope = $this->decorated->dispatch($message, $stamps);
+        $envelope = $this->decorated->dispatch($message, $stamps);
+
+        if (self::$enableMessagesCollection) {
+            self::$messages[] = $envelope;
+        }
 
         return $envelope;
     }
