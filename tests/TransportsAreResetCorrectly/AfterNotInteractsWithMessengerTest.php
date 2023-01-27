@@ -34,6 +34,8 @@ final class AfterNotInteractsWithMessengerTest extends KernelTestCase
         $this->transport()->dispatched()->assertCount(0);
         $this->transport()->acknowledged()->assertCount(0);
         $this->transport()->rejected()->assertCount(0);
+
+        $this->bus()->dispatched()->assertCount(0);
     }
 
     protected static function bootKernel(array $options = []): KernelInterface // @phpstan-ignore-line
