@@ -11,6 +11,9 @@ final class TestBus implements MessageBusInterface
     /** @var list<Envelope> */
     private static array $messages = [];
 
+    // The setting applies to all buses
+    private static bool $enableMessagesCollection = true;
+
     public function __construct(MessageBusInterface $decorated)
     {
         $this->decorated = $decorated;
@@ -35,5 +38,15 @@ final class TestBus implements MessageBusInterface
     public static function resetAll(): void
     {
         self::$messages = [];
+    }
+
+    public static function enableMessagesCollection(): void
+    {
+        self::$enableMessagesCollection = true;
+    }
+
+    public static function disableMessagesCollection(): void
+    {
+        self::$enableMessagesCollection = false;
     }
 }
