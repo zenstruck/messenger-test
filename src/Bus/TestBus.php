@@ -10,7 +10,7 @@ final class TestBus implements MessageBusInterface
     private string $name;
 
     private MessageBusInterface $decorated;
-    /** @var list<Envelope> */
+    /** @var array<string, list<Envelope>> */
     private static array $messages = [];
 
     // The setting applies to all buses
