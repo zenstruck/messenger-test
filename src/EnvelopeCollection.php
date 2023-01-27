@@ -20,25 +20,17 @@ use Zenstruck\Messenger\Test\Transport\TestTransport;
  *
  * @implements \IteratorAggregate<TestEnvelope>
  */
-final class EnvelopeCollection implements \IteratorAggregate, \Countable
+abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
 {
-    private TestTransport $transport;
-
     /** @var Envelope[] */
-    private array $envelopes;
+    protected array $envelopes;
 
     /**
      * @internal
      */
-    public function __construct(TestTransport $transport, Envelope ...$envelopes)
+    public function __construct(Envelope ...$envelopes)
     {
-        $this->transport = $transport;
         $this->envelopes = $envelopes;
-    }
-
-    public function back(): TestTransport
-    {
-        return $this->transport;
     }
 
     public function assertEmpty(): self
