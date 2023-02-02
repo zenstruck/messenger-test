@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v1.6.1](https://github.com/zenstruck/messenger-test/releases/tag/v1.6.1)
+
+February 2nd, 2023 - [v1.6.0...v1.6.1](https://github.com/zenstruck/messenger-test/compare/v1.6.0...v1.6.1)
+
+* 12c8b18 fix: reinit TestTransport before each test (#56) by @nikophil
+
 ## [v1.6.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.6.0)
 
 January 23rd, 2023 - [v1.5.1...v1.6.0](https://github.com/zenstruck/messenger-test/compare/v1.5.1...v1.6.0)
