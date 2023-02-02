@@ -34,10 +34,12 @@ in your `test` environment with `test://`:
                     async: test://
     ```
 
-## Usage
+## Transport
 
 You can interact with the test transports in your tests by using the
-`InteractsWithMessenger` trait in your `KernelTestCase`/`WebTestCase` tests:
+`InteractsWithMessenger` trait in your `KernelTestCase`/`WebTestCase` tests.
+You can assert the different step of message processing by asserting on the queue
+and the different state of message processing like acknowledged, rejected and so on.
 
 ### Queue Assertions
 
@@ -334,7 +336,7 @@ when@test:
                 high: test://
 ```
 
-In your tests, pass the name to the `messenger()` method:
+In your tests, pass the name to the `transport()` method:
 
 ```php
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -348,6 +350,78 @@ class MyTest extends KernelTestCase // or WebTestCase
     {
         $this->transport('high')->queue();
         $this->transport('low')->dispatched();
+    }
+}
+```
+
+## Bus
+
+In addition to transport testing you also can test on the bus. You can test message
+handling by using the same `InteractsWithMessenger` trait in your `KernelTestCase` / `WebTestCase` tests.
+This is especially useful when you only need to test if a message has been handled
+by a specific bus but don't need to know how the handling has been made.
+
+### Single bus
+```php
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Zenstruck\Messenger\Test\InteractsWithMessenger;
+
+class MyTest extends KernelTestCase
+{
+    use InteractsWithMessenger;
+
+    public function test_something(): void
+    {
+        // ... some code that use bus
+
+        // Let's assume two messages are processed
+        $this->bus()->dispatched()->assertCount(2);
+
+        $this->bus()->dispatched()->assertContains(\MessageA::class, 1);
+        $this->bus()->dispatched()->assertContains(\MessageB::class, 1);
+    }
+}
+```
+
+### Multiple buses
+
+If you use multiple buses you can test that a specific bus has handled its own
+messages.
+
+```yaml
+# config/packages/messenger.yaml
+
+# ...
+
+framework:
+    messenger:
+        default_bus: bus_c
+        buses:
+            bus_a: ~
+            bus_b: ~
+            bus_c: ~
+```
+
+In your tests, pass the name to the `bus()` method:
+```php
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Zenstruck\Messenger\Test\InteractsWithMessenger;
+
+class MyTest extends KernelTestCase
+{
+    use InteractsWithMessenger;
+
+    public function test_something(): void
+    {
+        // ... some code that use bus
+
+        // Let's assume two messages are handled by two different buses
+        $this->bus('bus-a.test-bus')->dispatched()->assertCount(1);
+        $this->bus('bus-b.test-bus')->dispatched()->assertCount(1);
+        $this->bus('bus-c.test-bus')->dispatched()->assertCount(0);
+
+        $this->bus('bus-a.test-bus')->dispatched()->assertContains(\MessageA::class, 1);
+        $this->bus('bus-b.test-bus')->dispatched()->assertContains(\MessageB::class, 1);
     }
 }
 ```
