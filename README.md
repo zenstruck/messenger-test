@@ -38,8 +38,10 @@ in your `test` environment with `test://`:
 
 You can interact with the test transports in your tests by using the
 `InteractsWithMessenger` trait in your `KernelTestCase`/`WebTestCase` tests.
-You can assert the different step of message processing by asserting on the queue
+You can assert the different steps of message processing by asserting on the queue
 and the different state of message processing like acknowledged, rejected and so on.
+
+If you only need to know if a message has been dispatched you can test on the bus. (see below)
 
 ### Queue Assertions
 
@@ -358,7 +360,7 @@ class MyTest extends KernelTestCase // or WebTestCase
 
 In addition to transport testing you also can test on the bus. You can test message
 handling by using the same `InteractsWithMessenger` trait in your `KernelTestCase` / `WebTestCase` tests.
-This is especially useful when you only need to test if a message has been handled
+This is especially useful when you only need to test if a message has been dispatched
 by a specific bus but don't need to know how the handling has been made.
 
 ### Single bus
