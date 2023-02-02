@@ -1,0 +1,10 @@
+imports:
+    - { resource: test.yaml }
+
+framework:
+    messenger:
+        transports:
+            async:
+                dsn: test://?disable_retries=false
+        routing:
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: async

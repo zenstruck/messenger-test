@@ -4,6 +4,7 @@ namespace Zenstruck\Messenger\Test\Bus;
 
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Stamp\ReceivedStamp;
 
 final class TestBus implements MessageBusInterface
 {
@@ -27,7 +28,7 @@ final class TestBus implements MessageBusInterface
     {
         $envelope = $this->decorated->dispatch($message, $stamps);
 
-        if (self::$enableMessagesCollection) {
+        if (true === self::$enableMessagesCollection && empty($envelope->all(ReceivedStamp::class))) {
             self::$messages[$this->name][] = $envelope;
         }
 

@@ -94,9 +94,29 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::getContainer()->get('bus_b.test-bus')->dispatch(new MessageB());
         self::getContainer()->get('bus_c.test-bus')->dispatch(new MessageC());
 
+        $this->bus('bus_a.test-bus')->dispatched()->assertCount(1);
+        $this->bus('bus_b.test-bus')->dispatched()->assertCount(1);
+        $this->bus('bus_c.test-bus')->dispatched()->assertCount(1);
         $this->bus('bus_a.test-bus')->dispatched()->assertContains(MessageA::class, 1);
         $this->bus('bus_b.test-bus')->dispatched()->assertContains(MessageB::class, 1);
         $this->bus('bus_c.test-bus')->dispatched()->assertContains(MessageC::class, 1);
+    }
+
+    /**
+     * @test
+     */
+    public function retried_messages_are_handled(): void
+    {
+        self::bootKernel(['environment' => 'retry_for_bus']);
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->transport()
+            ->process()
+            ->rejected()
+            ->assertContains(MessageA::class, 4)
+        ;
+        $this->bus()->dispatched()->assertcount(1);
     }
 
     /**
@@ -155,6 +175,9 @@ final class InteractsWithMessengerTest extends WebTestCase
             ->rejected()->assertEmpty()
         ;
 
+        self::assertInstanceOf(TestBus::class, ($bus = $this->bus())->dispatched()->assertEmpty()->back());
+        self::assertSame($bus, $this->bus()->dispatched()->back());
+
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
 
         $this->transport()
@@ -168,6 +191,9 @@ final class InteractsWithMessengerTest extends WebTestCase
             ->acknowledged()->assertCount(1)->back()
             ->rejected()->assertEmpty()->back()
         ;
+
+        // Because the MessageA is routed and passes two times in the bus
+        $this->bus()->dispatched()->assertCount(1);
     }
 
     /**
