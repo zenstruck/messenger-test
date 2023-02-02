@@ -8,3 +8,7 @@ framework:
                 dsn: test://?disable_retries=false
         routing:
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: async
+        buses:
+            bus_a: ~
+            bus_b: ~
+        default_bus: bus_a

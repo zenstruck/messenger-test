@@ -84,7 +84,7 @@ final class InteractsWithMessengerTest extends WebTestCase
      */
     public function interacts_with_specified_bus(): void
     {
-        self::bootKernel(['environment' => 'multi_bus']);
+        self::bootKernel(['environment' => 'multi_bus_no_routing']);
 
         $this->bus('bus_a.test-bus')->dispatched()->assertEmpty();
         $this->bus('bus_b.test-bus')->dispatched()->assertEmpty();
@@ -107,16 +107,18 @@ final class InteractsWithMessengerTest extends WebTestCase
      */
     public function retried_messages_are_handled(): void
     {
-        self::bootKernel(['environment' => 'retry_for_bus']);
+        self::bootKernel(['environment' => 'multi_bus_routing_with_fail']);
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+        self::getContainer()->get('bus_b.test-bus')->dispatch(new MessageB());
 
         $this->transport()
             ->process()
             ->rejected()
-            ->assertContains(MessageA::class, 4)
+            ->assertContains(MessageA::class, 1)
         ;
-        $this->bus()->dispatched()->assertcount(1);
+        $this->bus('bus_a.test-bus')->dispatched()->assertcount(1);
+        $this->bus('bus_b.test-bus')->dispatched()->assertCount(1);
     }
 
     /**
