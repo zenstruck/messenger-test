@@ -302,6 +302,11 @@ final class TestTransport implements TransportInterface
         self::$queue = self::$dispatched = self::$acknowledged = self::$rejected = self::$intercept = self::$catchExceptions = [];
     }
 
+    public static function initialize(): void
+    {
+        self::$intercept = self::$catchExceptions = self::$testSerialization = self::$disableRetries = [];
+    }
+
     public static function enableMessagesCollection(): void
     {
         self::$enableMessagesCollection = true;
