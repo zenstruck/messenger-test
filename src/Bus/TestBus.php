@@ -39,7 +39,9 @@ final class TestBus implements MessageBusInterface
      */
     public static function resetAll(): void
     {
-        self::$messages = [];
+        foreach (array_keys(self::$messages) as $bus) {
+            self::$messages[$bus] = [];
+        }
     }
 
     public static function enableMessagesCollection(): void
