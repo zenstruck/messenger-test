@@ -24,7 +24,7 @@ final class NonKernelTestCaseTest extends TestCase
     /**
      * @test
      */
-    public function must_extend_kernel_test_case_for_messenger(): void
+    public function must_extend_kernel_test_case_for_transport(): void
     {
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('trait can only be used with');
