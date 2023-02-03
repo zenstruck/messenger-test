@@ -32,23 +32,14 @@ class TestBusTest extends TestCase
      */
     public function collect_messages_when_enabled(): void
     {
-        $bus = new TestBus('bus', $mock = $this->createMock(MessageBusInterface::class));
-        $stamps = [$this->createMock(StampInterface::class)];
-        $mock->expects(self::exactly(2))->method('dispatch')
-            ->withConsecutive(
-                [self::isInstanceOf(\stdClass::class), $stamps],
-                [self::isInstanceOf(\stdClass::class), $stamps],
-            )
-            ->willReturnOnConsecutiveCalls(
-                new Envelope(new \stdClass(), $stamps),
-                new Envelope(new \stdClass(), $stamps),
-            );
+        $bus = new TestBus('bus', new TestableBus());
 
-        $bus->dispatch(new \stdClass(), $stamps);
+        $bus->dispatch(new \stdClass(), [$this->createMock(StampInterface::class)]);
         TestBus::disableMessagesCollection();
-        $bus->dispatch(new \stdClass(), $stamps);
+        $bus->dispatch(new \stdClass(), [$this->createMock(StampInterface::class)]);
 
         $bus->dispatched()->assertCount(1);
+        self::assertCount(2, TestableBus::$envelopes);
     }
 
     /**
@@ -63,5 +54,17 @@ class TestBusTest extends TestCase
 
         TestBus::resetAll();
         $bus->dispatched()->assertEmpty();
+    }
+}
+
+final class TestableBus implements MessageBusInterface
+{
+    static array $envelopes = [];
+
+    public function dispatch(object $message, array $stamps = []): Envelope
+    {
+        self::$envelopes[] = $envelope = Envelope::wrap($message, $stamps);
+
+        return $envelope;
     }
 }
