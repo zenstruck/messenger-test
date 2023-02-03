@@ -39,9 +39,10 @@ in your `test` environment with `test://`:
 You can interact with the test transports in your tests by using the
 `InteractsWithMessenger` trait in your `KernelTestCase`/`WebTestCase` tests.
 You can assert the different steps of message processing by asserting on the queue
-and the different state of message processing like acknowledged, rejected and so on.
+and the different states of message processing like "acknowledged", "rejected" and so on.
 
-If you only need to know if a message has been dispatched you can test on the bus. (see below)
+> **Note**: If you only need to know if a message has been dispatched you can
+> make assertions [on the bus itself](#bus).
 
 ### Queue Assertions
 
@@ -358,7 +359,7 @@ class MyTest extends KernelTestCase // or WebTestCase
 
 ## Bus
 
-In addition to transport testing you also can test on the bus. You can test message
+In addition to transport testing you also can make assertions on the bus. You can test message
 handling by using the same `InteractsWithMessenger` trait in your `KernelTestCase` / `WebTestCase` tests.
 This is especially useful when you only need to test if a message has been dispatched
 by a specific bus but don't need to know how the handling has been made.
@@ -418,12 +419,12 @@ class MyTest extends KernelTestCase
         // ... some code that use bus
 
         // Let's assume two messages are handled by two different buses
-        $this->bus('bus-a.test-bus')->dispatched()->assertCount(1);
-        $this->bus('bus-b.test-bus')->dispatched()->assertCount(1);
-        $this->bus('bus-c.test-bus')->dispatched()->assertCount(0);
+        $this->bus('bus-a')->dispatched()->assertCount(1);
+        $this->bus('bus-b')->dispatched()->assertCount(1);
+        $this->bus('bus-c')->dispatched()->assertCount(0);
 
-        $this->bus('bus-a.test-bus')->dispatched()->assertContains(\MessageA::class, 1);
-        $this->bus('bus-b.test-bus')->dispatched()->assertContains(\MessageB::class, 1);
+        $this->bus('bus-a')->dispatched()->assertContains(\MessageA::class, 1);
+        $this->bus('bus-b')->dispatched()->assertContains(\MessageB::class, 1);
     }
 }
 ```
