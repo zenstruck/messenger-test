@@ -75,7 +75,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::bootKernel();
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
-        $this->bus('messenger.bus.default.test-bus')->dispatched()
+        $this->bus()->dispatched()
             ->assertContains(MessageA::class, 1);
     }
 
@@ -86,20 +86,20 @@ final class InteractsWithMessengerTest extends WebTestCase
     {
         self::bootKernel(['environment' => 'multi_bus_no_routing']);
 
-        $this->bus('bus_a.test-bus')->dispatched()->assertEmpty();
-        $this->bus('bus_b.test-bus')->dispatched()->assertEmpty();
-        $this->bus('bus_c.test-bus')->dispatched()->assertEmpty();
+        $this->bus('bus_a')->dispatched()->assertEmpty();
+        $this->bus('bus_b')->dispatched()->assertEmpty();
+        $this->bus('bus_c')->dispatched()->assertEmpty();
 
-        self::getContainer()->get('bus_a.test-bus')->dispatch(new MessageA());
-        self::getContainer()->get('bus_b.test-bus')->dispatch(new MessageB());
-        self::getContainer()->get('bus_c.test-bus')->dispatch(new MessageC());
+        self::getContainer()->get('bus_a')->dispatch(new MessageA());
+        self::getContainer()->get('bus_b')->dispatch(new MessageB());
+        self::getContainer()->get('bus_c')->dispatch(new MessageC());
 
-        $this->bus('bus_a.test-bus')->dispatched()->assertCount(1);
-        $this->bus('bus_b.test-bus')->dispatched()->assertCount(1);
-        $this->bus('bus_c.test-bus')->dispatched()->assertCount(1);
-        $this->bus('bus_a.test-bus')->dispatched()->assertContains(MessageA::class, 1);
-        $this->bus('bus_b.test-bus')->dispatched()->assertContains(MessageB::class, 1);
-        $this->bus('bus_c.test-bus')->dispatched()->assertContains(MessageC::class, 1);
+        $this->bus('bus_a')->dispatched()->assertCount(1);
+        $this->bus('bus_b')->dispatched()->assertCount(1);
+        $this->bus('bus_c')->dispatched()->assertCount(1);
+        $this->bus('bus_a')->dispatched()->assertContains(MessageA::class, 1);
+        $this->bus('bus_b')->dispatched()->assertContains(MessageB::class, 1);
+        $this->bus('bus_c')->dispatched()->assertContains(MessageC::class, 1);
     }
 
     /**
@@ -109,16 +109,16 @@ final class InteractsWithMessengerTest extends WebTestCase
     {
         self::bootKernel(['environment' => 'multi_bus_routing_with_fail']);
 
-        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
-        self::getContainer()->get('bus_b.test-bus')->dispatch(new MessageB());
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(fail: true));
+        self::getContainer()->get('bus_b')->dispatch(new MessageB());
 
         $this->transport()
             ->process()
             ->rejected()
-            ->assertContains(MessageA::class, 1)
+            ->assertContains(MessageA::class, 4)
         ;
-        $this->bus('bus_a.test-bus')->dispatched()->assertcount(1);
-        $this->bus('bus_b.test-bus')->dispatched()->assertCount(1);
+        $this->bus('bus_a')->dispatched()->assertcount(1);
+        $this->bus('bus_b')->dispatched()->assertCount(1);
     }
 
     /**
