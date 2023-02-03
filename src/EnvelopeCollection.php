@@ -13,6 +13,7 @@ namespace Zenstruck\Messenger\Test;
 
 use Symfony\Component\Messenger\Envelope;
 use Zenstruck\Assert;
+use Zenstruck\Messenger\Test\Bus\TestBus;
 use Zenstruck\Messenger\Test\Transport\TestTransport;
 
 /**
@@ -32,6 +33,8 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
     {
         $this->envelopes = $envelopes;
     }
+
+    abstract public function back(): TestBus|TestTransport;
 
     public function assertEmpty(): self
     {
