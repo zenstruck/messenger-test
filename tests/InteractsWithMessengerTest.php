@@ -76,6 +76,20 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
         $this->bus()->dispatched()
+            ->assertCount(1)
+            ->assertContains(MessageA::class, 1);
+    }
+
+    /**
+     * @test
+     */
+    public function use_default_sync_transport()
+    {
+        self::bootKernel(['environment' => 'default_sync_transport']);
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+        $this->bus()->dispatched()
+            ->assertCount(1)
             ->assertContains(MessageA::class, 1);
     }
 
