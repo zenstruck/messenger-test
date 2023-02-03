@@ -29,10 +29,18 @@ final class TestBus implements MessageBusInterface
         $envelope = $this->decorated->dispatch($message, $stamps);
 
         if (true === self::$enableMessagesCollection && empty($envelope->all(ReceivedStamp::class))) {
+            self::$messages[$this->name] ??= [];
             self::$messages[$this->name][] = $envelope;
         }
 
         return $envelope;
+    }
+
+    public function reset(): self
+    {
+        self::$messages[$this->name] = [];
+
+        return $this;
     }
 
     /**
@@ -40,9 +48,7 @@ final class TestBus implements MessageBusInterface
      */
     public static function resetAll(): void
     {
-        foreach (array_keys(self::$messages) as $bus) {
-            self::$messages[$bus] = [];
-        }
+        self::$messages = [];
     }
 
     public static function enableMessagesCollection(): void
