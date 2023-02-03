@@ -28,7 +28,7 @@ final class TestBus implements MessageBusInterface
     {
         $envelope = $this->decorated->dispatch($message, $stamps);
 
-        if (true === self::$enableMessagesCollection && empty($envelope->all(ReceivedStamp::class))) {
+        if (true === self::$enableMessagesCollection && !$envelope->all(ReceivedStamp::class)) {
             self::$messages[$this->name] ??= [];
             self::$messages[$this->name][] = $envelope;
         }
