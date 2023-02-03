@@ -364,6 +364,8 @@ handling by using the same `InteractsWithMessenger` trait in your `KernelTestCas
 This is especially useful when you only need to test if a message has been dispatched
 by a specific bus but don't need to know how the handling has been made.
 
+It allows you to use your custom transport while asserting your messages are still dispatched properly.
+
 ### Single bus
 ```php
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
