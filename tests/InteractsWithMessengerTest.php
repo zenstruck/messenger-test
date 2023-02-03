@@ -596,7 +596,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
 
         $this->expectException(\RuntimeException::class);
-        $this->expectErrorMessage('handling failed...');
+        $this->expectExceptionMessage('handling failed...');
 
         $this->messenger()->process();
     }
