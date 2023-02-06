@@ -367,6 +367,7 @@ by a specific bus but don't need to know how the handling has been made.
 It allows you to use your custom transport while asserting your messages are still dispatched properly.
 
 ### Single bus
+
 ```php
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Zenstruck\Messenger\Test\InteractsWithMessenger;
@@ -377,7 +378,7 @@ class MyTest extends KernelTestCase
 
     public function test_something(): void
     {
-        // ... some code that use bus
+        // ... some code that uses the bus
 
         // Let's assume two messages are processed
         $this->bus()->dispatched()->assertCount(2);
@@ -408,6 +409,7 @@ framework:
 ```
 
 In your tests, pass the name to the `bus()` method:
+
 ```php
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Zenstruck\Messenger\Test\InteractsWithMessenger;
