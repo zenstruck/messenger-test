@@ -32,14 +32,14 @@ class TestBusTest extends TestCase
      */
     public function collect_messages_when_enabled(): void
     {
-        $bus = new TestBus('bus', new TestableBus());
+        $bus = new TestBus('bus', $testableBus = new TestableBus());
 
         $bus->dispatch(new \stdClass(), [$this->createMock(StampInterface::class)]);
         TestBus::disableMessagesCollection();
         $bus->dispatch(new \stdClass(), [$this->createMock(StampInterface::class)]);
 
         $bus->dispatched()->assertCount(1);
-        self::assertCount(2, TestableBus::$envelopes);
+        self::assertCount(2, $testableBus->envelopes);
     }
 
     /**
@@ -59,11 +59,11 @@ class TestBusTest extends TestCase
 
 final class TestableBus implements MessageBusInterface
 {
-    static array $envelopes = [];
+    public array $envelopes = [];
 
     public function dispatch(object $message, array $stamps = []): Envelope
     {
-        self::$envelopes[] = $envelope = Envelope::wrap($message, $stamps);
+        $this->envelopes[] = $envelope = Envelope::wrap($message, $stamps);
 
         return $envelope;
     }
