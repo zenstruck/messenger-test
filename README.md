@@ -382,8 +382,8 @@ class MyTest extends KernelTestCase
         // Let's assume two messages are processed
         $this->bus()->dispatched()->assertCount(2);
 
-        $this->bus()->dispatched()->assertContains(\MessageA::class, 1);
-        $this->bus()->dispatched()->assertContains(\MessageB::class, 1);
+        $this->bus()->dispatched()->assertContains(MessageA::class, 1);
+        $this->bus()->dispatched()->assertContains(MessageB::class, 1);
     }
 }
 ```
@@ -425,8 +425,8 @@ class MyTest extends KernelTestCase
         $this->bus('bus-b')->dispatched()->assertCount(1);
         $this->bus('bus-c')->dispatched()->assertCount(0);
 
-        $this->bus('bus-a')->dispatched()->assertContains(\MessageA::class, 1);
-        $this->bus('bus-b')->dispatched()->assertContains(\MessageB::class, 1);
+        $this->bus('bus-a')->dispatched()->assertContains(MessageA::class, 1);
+        $this->bus('bus-b')->dispatched()->assertContains(MessageB::class, 1);
     }
 }
 ```
