@@ -26,8 +26,8 @@ class TestBusRegistryTest extends TestCase
     public function get_named_bus(): void
     {
         $registry = new TestBusRegistry();
-        $registry->register('bus-a.test-bus', new TestBus('bus-a', $this->createMock(MessageBusInterface::class)));
-        $registry->register('bus-b.test-bus', $bus = new TestBus('bus-b', $this->createMock(MessageBusInterface::class)));
+        $registry->register('bus-a', new TestBus('bus-a', $this->createMock(MessageBusInterface::class)));
+        $registry->register('bus-b', $bus = new TestBus('bus-b', $this->createMock(MessageBusInterface::class)));
 
         self::assertSame($bus, $registry->get('bus-b'));
     }
@@ -69,7 +69,7 @@ class TestBusRegistryTest extends TestCase
         $registry->register('bus-a', $this->createMock(MessageBusInterface::class));
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Bus "unknown.test-bus" not registered.');
+        $this->expectExceptionMessage('Bus "unknown" not registered.');
 
         $registry->get('unknown');
     }
@@ -80,10 +80,10 @@ class TestBusRegistryTest extends TestCase
     public function valid_decorated_bus(): void
     {
         $registry = new TestBusRegistry();
-        $registry->register('bus-a.test-bus', $this->createMock(MessageBusInterface::class));
+        $registry->register('bus-a', $this->createMock(MessageBusInterface::class));
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('Bus "bus-a.test-bus" needs to be a decorator of the bus.');
+        $this->expectExceptionMessage('Bus "bus-a" needs to be a decorator of the bus.');
 
         $registry->get('bus-a');
     }

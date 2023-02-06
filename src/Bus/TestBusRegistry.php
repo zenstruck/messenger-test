@@ -24,7 +24,6 @@ final class TestBusRegistry
             throw new \InvalidArgumentException(\sprintf('Multiple buses are registered (%s), you must specify a name.', \implode(', ', \array_keys($this->buses))));
         }
 
-        $name = $name ? "{$name}.test-bus" : null;
         if (null === $name) {
             $name = \array_key_first($this->buses);
         }
