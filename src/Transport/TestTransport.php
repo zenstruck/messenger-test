@@ -22,7 +22,6 @@ use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
 use Zenstruck\Assert;
-use Zenstruck\Messenger\Test\EnvelopeCollection;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
@@ -200,22 +199,22 @@ final class TestTransport implements TransportInterface
         return $this->process($number);
     }
 
-    public function queue(): EnvelopeCollection
+    public function queue(): TransportEnvelopeCollection
     {
         return new TransportEnvelopeCollection($this, ...self::$queue[$this->name] ?? []);
     }
 
-    public function dispatched(): EnvelopeCollection
+    public function dispatched(): TransportEnvelopeCollection
     {
         return new TransportEnvelopeCollection($this, ...self::$dispatched[$this->name] ?? []);
     }
 
-    public function acknowledged(): EnvelopeCollection
+    public function acknowledged(): TransportEnvelopeCollection
     {
         return new TransportEnvelopeCollection($this, ...self::$acknowledged[$this->name] ?? []);
     }
 
-    public function rejected(): EnvelopeCollection
+    public function rejected(): TransportEnvelopeCollection
     {
         return new TransportEnvelopeCollection($this, ...self::$rejected[$this->name] ?? []);
     }
