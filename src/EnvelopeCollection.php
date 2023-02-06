@@ -34,8 +34,6 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
         $this->envelopes = $envelopes;
     }
 
-    abstract public function back(): TestBus|TestTransport;
-
     public function assertEmpty(): self
     {
         return $this->assertCount(0);
