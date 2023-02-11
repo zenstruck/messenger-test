@@ -12,7 +12,6 @@
 namespace Zenstruck\Messenger\Test;
 
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Zenstruck\Messenger\Test\Bus\TestBus;
 use Zenstruck\Messenger\Test\Bus\TestBusRegistry;
 use Zenstruck\Messenger\Test\Transport\TestTransport;
@@ -67,7 +66,7 @@ trait InteractsWithMessenger
     }
 
     /**
-     * @deprecated Use transport() instead.
+     * @deprecated use transport() instead
      */
     final protected function messenger(?string $transport = null): TestTransport
     {

@@ -13,8 +13,6 @@ namespace Zenstruck\Messenger\Test;
 
 use Symfony\Component\Messenger\Envelope;
 use Zenstruck\Assert;
-use Zenstruck\Messenger\Test\Bus\TestBus;
-use Zenstruck\Messenger\Test\Transport\TestTransport;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>

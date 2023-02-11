@@ -77,7 +77,7 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
         $busRegistry = $container->getDefinition('zenstruck_messenger_test.bus_registry');
 
         foreach ($container->findTaggedServiceIds('messenger.bus') as $id => $tags) {
-            $name = "$id.test-bus";
+            $name = "{$id}.test-bus";
             $busRegistry->addMethodCall('register', [$id, new Reference($name)]);
             $container->register($name, TestBus::class)
                 ->setAutowired(true)

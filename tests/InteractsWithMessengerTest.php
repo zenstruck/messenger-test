@@ -13,7 +13,6 @@ namespace Zenstruck\Messenger\Test\Tests;
 
 use PHPUnit\Framework\AssertionFailedError;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
