@@ -1,0 +1,8 @@
+imports:
+    - { resource: test.yaml }
+
+framework:
+    messenger:
+        transports:
+            sync:
+                dsn: sync://

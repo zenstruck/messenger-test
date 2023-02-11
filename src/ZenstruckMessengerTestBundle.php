@@ -17,6 +17,8 @@ use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\Messenger\Transport\TransportInterface;
+use Zenstruck\Messenger\Test\Bus\TestBus;
+use Zenstruck\Messenger\Test\Bus\TestBusRegistry;
 use Zenstruck\Messenger\Test\Transport\TestTransportFactory;
 use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
 
@@ -36,6 +38,10 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
             ->setPublic(true)
         ;
 
+        $container->register('zenstruck_messenger_test.bus_registry', TestBusRegistry::class)
+            ->setPublic(true)
+        ;
+
         $container->addCompilerPass($this);
     }
 
@@ -46,7 +52,7 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
 
     public function process(ContainerBuilder $container): void
     {
-        $registry = $container->getDefinition('zenstruck_messenger_test.transport_registry');
+        $transportRegistry = $container->getDefinition('zenstruck_messenger_test.transport_registry');
 
         foreach ($container->findTaggedServiceIds('messenger.receiver') as $id => $tags) {
             $name = $id;
@@ -65,7 +71,20 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
                 }
             }
 
-            $registry->addMethodCall('register', [$name, new Reference($id)]);
+            $transportRegistry->addMethodCall('register', [$name, new Reference($id)]);
+        }
+
+        $busRegistry = $container->getDefinition('zenstruck_messenger_test.bus_registry');
+
+        foreach ($container->findTaggedServiceIds('messenger.bus') as $id => $tags) {
+            $name = "$id.test-bus";
+            $busRegistry->addMethodCall('register', [$id, new Reference($name)]);
+            $container->register($name, TestBus::class)
+                ->setAutowired(true)
+                ->setPublic(true)
+                ->setArgument('$name', $id)
+                ->setDecoratedService($id)
+            ;
         }
     }
 }
