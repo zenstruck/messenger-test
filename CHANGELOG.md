@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [v1.7.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.7.0)
+
+February 22nd, 2023 - [v1.6.1...v1.7.0](https://github.com/zenstruck/messenger-test/compare/v1.6.1...v1.7.0)
+
+* 61e8802 feat: Make bus queriable (#54) by @flohw
+* 823f155 fix(ci): prevent running fixcs/sync-with-template on forks (#57) by @kbond
+* bfa2191 fix(tests): phpunit deprecation (#57) by @kbond
+
 ## [v1.6.1](https://github.com/zenstruck/messenger-test/releases/tag/v1.6.1)
 
 February 2nd, 2023 - [v1.6.0...v1.6.1](https://github.com/zenstruck/messenger-test/compare/v1.6.0...v1.6.1)
