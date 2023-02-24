@@ -21,8 +21,9 @@
             <exclude>./tests/TransportsAreResetCorrectly</exclude>
         </testsuite>
         <testsuite name="zenstruck/messenger-test transports are reset correctly">
-            <file>./tests/TransportsAreResetCorrectly/NotInteractsWithMessengerTest.php</file>
-            <file>./tests/TransportsAreResetCorrectly/AfterNotInteractsWithMessengerTest.php</file>
+            <file>./tests/TransportsAreResetCorrectly/NotInteractsWithMessengerBeforeTest.php</file>
+            <file>./tests/TransportsAreResetCorrectly/UsingTraitInteractsWithMessengerTest.php</file>
+            <file>./tests/TransportsAreResetCorrectly/NotInteractsWithMessengerAfterTest.php</file>
         </testsuite>
     </testsuites>
 

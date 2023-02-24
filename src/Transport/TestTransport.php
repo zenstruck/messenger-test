@@ -276,7 +276,7 @@ final class TestTransport implements TransportInterface
         }
 
         $this->collectMessage(self::$dispatched, $envelope);
-        $this->collectMessage(self::$queue, $envelope);
+        $this->collectMessage(self::$queue, $envelope, force: true);
 
         if (!$this->isIntercepting()) {
             $this->process();
@@ -319,9 +319,9 @@ final class TestTransport implements TransportInterface
     /**
      * @param array<string, Envelope[]> $messagesCollection
      */
-    private function collectMessage(array &$messagesCollection, Envelope $envelope): void
+    private function collectMessage(array &$messagesCollection, Envelope $envelope, bool $force = false): void
     {
-        if (!self::$enableMessagesCollection) {
+        if (!self::$enableMessagesCollection && !$force) {
             return;
         }
 

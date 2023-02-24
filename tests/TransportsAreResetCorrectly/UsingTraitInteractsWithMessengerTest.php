@@ -16,10 +16,11 @@ use Symfony\Component\HttpKernel\KernelInterface;
 use Zenstruck\Messenger\Test\InteractsWithMessenger;
 
 /**
- * This test runs after NotInteractsWithMessengerTest and asserts the message dispatched there, without using InteractsWithMessenger
+ * This test runs after "NotInteractsWithMessengerBeforeTest" and before "NotInteractsWithMessengerAfterTest".
+ * It asserts the message dispatched in "NotInteractsWithMessengerBeforeTest", without using InteractsWithMessenger,
  * is not present anymore in the test transport.
  */
-final class AfterNotInteractsWithMessengerTest extends KernelTestCase
+final class UsingTraitInteractsWithMessengerTest extends KernelTestCase
 {
     use InteractsWithMessenger;
 
