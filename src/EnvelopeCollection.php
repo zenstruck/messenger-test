@@ -32,26 +32,26 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
         $this->envelopes = $envelopes;
     }
 
-    public function assertEmpty(): self
+    public function assertEmpty(): static
     {
         return $this->assertCount(0);
     }
 
-    public function assertNotEmpty(): self
+    public function assertNotEmpty(): static
     {
         Assert::that($this)->isNotEmpty('Expected some messages but found none.');
 
         return $this;
     }
 
-    public function assertCount(int $count): self
+    public function assertCount(int $count): static
     {
         Assert::that($this->envelopes)->hasCount($count, 'Expected {expected} messages but {actual} messages found.');
 
         return $this;
     }
 
-    public function assertContains(string $messageClass, ?int $times = null): self
+    public function assertContains(string $messageClass, ?int $times = null): static
     {
         $messages = $this->messages($messageClass);
 
@@ -70,7 +70,7 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
         return $this;
     }
 
-    public function assertNotContains(string $messageClass): self
+    public function assertNotContains(string $messageClass): static
     {
         Assert::that($this->messages($messageClass))->isEmpty(
             'Found message "{message}" but should not.',
