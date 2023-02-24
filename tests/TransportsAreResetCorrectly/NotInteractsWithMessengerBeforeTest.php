@@ -15,13 +15,14 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA;
+use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageAHandler;
 use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
 
 /**
  * This test is just made to dispatch a message without using "InteractsWithMessenger" trait.
  * We want to confirm that the next test starts with empty transports.
  */
-final class NotInteractsWithMessengerTest extends KernelTestCase
+class NotInteractsWithMessengerBeforeTest extends KernelTestCase
 {
     /**
      * @test
@@ -33,10 +34,14 @@ final class NotInteractsWithMessengerTest extends KernelTestCase
         $testTransport = $registry->get();
 
         $testTransport->queue()->assertCount(0);
+        $this->assertEmpty(self::getContainer()->get(MessageAHandler::class)->messages);
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
 
-        $testTransport->queue()->assertCount(0);
+        $testTransport->queue()->assertCount(1);
+        $testTransport->process();
+
+        $this->assertCount(1, self::getContainer()->get(MessageAHandler::class)->messages);
     }
 
     protected static function bootKernel(array $options = []): KernelInterface // @phpstan-ignore-line
