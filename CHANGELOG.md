@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v1.7.2](https://github.com/zenstruck/messenger-test/releases/tag/v1.7.2)
+
+February 24th, 2023 - [v1.7.1...v1.7.2](https://github.com/zenstruck/messenger-test/compare/v1.7.1...v1.7.2)
+
+* 2e51d27 fix: always collect messages in TestTransport::$queue (#62) by @nikophil
+
 ## [v1.7.1](https://github.com/zenstruck/messenger-test/releases/tag/v1.7.1)
 
 February 24th, 2023 - [v1.7.0...v1.7.1](https://github.com/zenstruck/messenger-test/compare/v1.7.0...v1.7.1)
