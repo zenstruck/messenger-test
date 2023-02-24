@@ -32,26 +32,26 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
         $this->envelopes = $envelopes;
     }
 
-    public function assertEmpty(): self
+    final public function assertEmpty(): static
     {
         return $this->assertCount(0);
     }
 
-    public function assertNotEmpty(): self
+    final public function assertNotEmpty(): static
     {
         Assert::that($this)->isNotEmpty('Expected some messages but found none.');
 
         return $this;
     }
 
-    public function assertCount(int $count): self
+    final public function assertCount(int $count): static
     {
         Assert::that($this->envelopes)->hasCount($count, 'Expected {expected} messages but {actual} messages found.');
 
         return $this;
     }
 
-    public function assertContains(string $messageClass, ?int $times = null): self
+    final public function assertContains(string $messageClass, ?int $times = null): static
     {
         $messages = $this->messages($messageClass);
 
@@ -70,7 +70,7 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
         return $this;
     }
 
-    public function assertNotContains(string $messageClass): self
+    final public function assertNotContains(string $messageClass): static
     {
         Assert::that($this->messages($messageClass))->isEmpty(
             'Found message "{message}" but should not.',
@@ -83,7 +83,7 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
     /**
      * @param string|callable|null $filter
      */
-    public function first($filter = null): TestEnvelope
+    final public function first($filter = null): TestEnvelope
     {
         if (null === $filter) {
             // just the first envelope
@@ -113,7 +113,7 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
      *
      * @return object[]
      */
-    public function messages(?string $class = null): array
+    final public function messages(?string $class = null): array
     {
         $messages = \array_map(static fn(Envelope $envelope) => $envelope->getMessage(), $this->envelopes);
 
@@ -127,7 +127,7 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
     /**
      * @return TestEnvelope[]
      */
-    public function all(): array
+    final public function all(): array
     {
         return \iterator_to_array($this);
     }
@@ -135,14 +135,14 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
     /**
      * @return \Traversable|TestEnvelope[]
      */
-    public function getIterator(): \Traversable
+    final public function getIterator(): \Traversable
     {
         foreach ($this->envelopes as $envelope) {
             yield new TestEnvelope($envelope);
         }
     }
 
-    public function count(): int
+    final public function count(): int
     {
         return \count($this->envelopes);
     }
