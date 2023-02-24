@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v1.7.1](https://github.com/zenstruck/messenger-test/releases/tag/v1.7.1)
+
+February 24th, 2023 - [v1.7.0...v1.7.1](https://github.com/zenstruck/messenger-test/compare/v1.7.0...v1.7.1)
+
+* 6a179b6 fix(EnvelopeCollection): return type for psalm and method final (#60) by @flohw
+
 ## [v1.7.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.7.0)
 
 February 22nd, 2023 - [v1.6.1...v1.7.0](https://github.com/zenstruck/messenger-test/compare/v1.6.1...v1.7.0)
