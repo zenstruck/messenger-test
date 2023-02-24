@@ -83,7 +83,7 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
     /**
      * @param string|callable|null $filter
      */
-    public function first($filter = null): TestEnvelope
+    final public function first($filter = null): TestEnvelope
     {
         if (null === $filter) {
             // just the first envelope
@@ -113,7 +113,7 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
      *
      * @return object[]
      */
-    public function messages(?string $class = null): array
+    final public function messages(?string $class = null): array
     {
         $messages = \array_map(static fn(Envelope $envelope) => $envelope->getMessage(), $this->envelopes);
 
@@ -127,7 +127,7 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
     /**
      * @return TestEnvelope[]
      */
-    public function all(): array
+    final public function all(): array
     {
         return \iterator_to_array($this);
     }
@@ -135,14 +135,14 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
     /**
      * @return \Traversable|TestEnvelope[]
      */
-    public function getIterator(): \Traversable
+    final public function getIterator(): \Traversable
     {
         foreach ($this->envelopes as $envelope) {
             yield new TestEnvelope($envelope);
         }
     }
 
-    public function count(): int
+    final public function count(): int
     {
         return \count($this->envelopes);
     }
