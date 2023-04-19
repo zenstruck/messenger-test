@@ -51,6 +51,9 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
         return $this;
     }
 
+    /**
+     * @param class-string $messageClass
+     */
     final public function assertContains(string $messageClass, ?int $times = null): static
     {
         $messages = $this->messages($messageClass);
@@ -70,6 +73,9 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
         return $this;
     }
 
+    /**
+     * @param class-string $messageClass
+     */
     final public function assertNotContains(string $messageClass): static
     {
         Assert::that($this->messages($messageClass))->isEmpty(
@@ -109,9 +115,11 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
     /**
      * The messages extracted from envelopes.
      *
-     * @param string|null $class Only messages of this class
+     * @template T of object
      *
-     * @return object[]
+     * @param class-string<T>|null $class Only messages of this class
+     *
+     * @return ($class is string ? list<T> : array<object>)
      */
     final public function messages(?string $class = null): array
     {
