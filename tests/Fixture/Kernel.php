@@ -13,6 +13,7 @@ namespace Zenstruck\Messenger\Test\Tests\Fixture;
 
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
+use Symfony\Component\Clock\Clock;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpFoundation\Response;
@@ -45,6 +46,10 @@ class Kernel extends BaseKernel
     protected function configureContainer(ContainerBuilder $c, LoaderInterface $loader): void
     {
         $loader->load(\sprintf('%s/config/%s.yaml', __DIR__, $this->getEnvironment()));
+
+        if (class_exists(Clock::class) && !$c->has(\Psr\Clock\ClockInterface::class)) {
+            $c->register(\Psr\Clock\ClockInterface::class, Clock::class)->setPublic(true);
+        }
     }
 
     /**

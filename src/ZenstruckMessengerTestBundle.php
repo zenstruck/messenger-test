@@ -11,8 +11,10 @@
 
 namespace Zenstruck\Messenger\Test;
 
+use Psr\Clock\ClockInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
@@ -30,7 +32,11 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
     public function build(ContainerBuilder $container): void
     {
         $container->register('zenstruck_messenger_test.transport_factory', TestTransportFactory::class)
-            ->setArguments([new Reference('messenger.routable_message_bus'), new Reference('event_dispatcher')])
+            ->setArguments([
+                new Reference('messenger.routable_message_bus'),
+                new Reference('event_dispatcher'),
+                new Reference(ClockInterface::class, invalidBehavior: ContainerInterface::NULL_ON_INVALID_REFERENCE),
+            ])
             ->addTag('messenger.transport_factory')
         ;
 

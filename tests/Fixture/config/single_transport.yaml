@@ -5,7 +5,7 @@ framework:
     messenger:
         transports:
             async:
-                dsn: test://
+                dsn: test://?support_delay_stamp=true
         routing:
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: [async]
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageB: [async]

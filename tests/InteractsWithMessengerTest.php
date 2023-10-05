@@ -13,6 +13,7 @@ namespace Zenstruck\Messenger\Test\Tests;
 
 use PHPUnit\Framework\AssertionFailedError;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
@@ -42,6 +43,7 @@ use Zenstruck\Messenger\Test\Transport\TestTransport;
 final class InteractsWithMessengerTest extends WebTestCase
 {
     use InteractsWithMessenger;
+    use ClockSensitiveTrait;
 
     /**
      * @test
@@ -870,15 +872,35 @@ final class InteractsWithMessengerTest extends WebTestCase
      */
     public function can_enable_retries(): void
     {
+        $clock = self::mockTime();
+
         self::bootKernel(['environment' => 'multi_transport']);
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
 
-        $this->transport('async4')
-            ->process()
-            ->rejected()
-            ->assertContains(MessageA::class, 4)
-        ;
+        $this->transport('async4')->process()->rejected()->assertContains(MessageA::class, 1);
+
+        $clock->sleep(1);
+        $this->transport('async4')->process()->rejected()->assertContains(MessageA::class, 2);
+
+        $clock->sleep(2);
+        $this->transport('async4')->process()->rejected()->assertContains(MessageA::class, 3);
+
+        $clock->sleep(4);
+        $this->transport('async4')->process()->rejected()->assertContains(MessageA::class, 4);
+    }
+
+    /**
+     * @test
+     * @group legacy
+     */
+    public function can_enable_retries_without_delay_stamp(): void
+    {
+        self::bootKernel(['environment' => 'delay_stamp_disabled']);
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->transport('async')->process()->rejected()->assertContains(MessageA::class, 4);
     }
 
     /**

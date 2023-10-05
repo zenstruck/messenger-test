@@ -13,7 +13,7 @@ framework:
     messenger:
         transports:
             async:
-                dsn: test://?disable_retries=false
+                dsn: test://?disable_retries=false&support_delay_stamp=true
         routing:
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: async
         default_bus: bus_c

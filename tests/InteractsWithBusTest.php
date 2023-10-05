@@ -62,15 +62,9 @@ class InteractsWithBusTest extends WebTestCase
         $this->bus('bus_b')->dispatched()->assertEmpty();
         $this->bus('bus_c')->dispatched()->assertEmpty();
 
-        self::getContainer()->get('bus_a')->dispatch(new MessageA(fail: true));
+        self::getContainer()->get('bus_a')->dispatch(new MessageA());
         self::getContainer()->get('bus_b')->dispatch(new MessageB());
         self::getContainer()->get('bus_c')->dispatch(new MessageC());
-
-        $this->transport()
-            ->process()
-            ->rejected()
-            ->assertContains(MessageA::class, 4)
-        ;
 
         $this->bus('bus_a')->dispatched()->assertCount(1);
         $this->bus('bus_b')->dispatched()->assertCount(1);

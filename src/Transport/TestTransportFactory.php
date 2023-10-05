@@ -11,6 +11,7 @@
 
 namespace Zenstruck\Messenger\Test\Transport;
 
+use Psr\Clock\ClockInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
@@ -24,18 +25,13 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
  */
 final class TestTransportFactory implements TransportFactoryInterface
 {
-    private MessageBusInterface $bus;
-    private EventDispatcherInterface $dispatcher;
-
-    public function __construct(MessageBusInterface $bus, EventDispatcherInterface $dispatcher)
+    public function __construct(private MessageBusInterface $bus, private EventDispatcherInterface $dispatcher, private ClockInterface|null $clock = null)
     {
-        $this->bus = $bus;
-        $this->dispatcher = $dispatcher;
     }
 
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface // @phpstan-ignore-line
     {
-        return new TestTransport($options['transport_name'], $this->bus, $this->dispatcher, $serializer, $this->parseDsn($dsn));
+        return new TestTransport($options['transport_name'], $this->bus, $this->dispatcher, $serializer, $this->clock, $this->parseDsn($dsn));
     }
 
     public function supports(string $dsn, array $options): bool // @phpstan-ignore-line
@@ -59,6 +55,7 @@ final class TestTransportFactory implements TransportFactoryInterface
             'catch_exceptions' => \filter_var($query['catch_exceptions'] ?? true, \FILTER_VALIDATE_BOOLEAN),
             'test_serialization' => \filter_var($query['test_serialization'] ?? true, \FILTER_VALIDATE_BOOLEAN),
             'disable_retries' => \filter_var($query['disable_retries'] ?? true, \FILTER_VALIDATE_BOOLEAN),
+            'support_delay_stamp' => \filter_var($query['support_delay_stamp'] ?? true, \FILTER_VALIDATE_BOOLEAN),
         ];
     }
 }

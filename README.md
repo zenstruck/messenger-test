@@ -304,23 +304,6 @@ when@test:
                 async: test://?test_serialization=false
 ```
 
-### Enable Retries
-
-By default, the `TestTransport` does not retry failed messages (your retry settings
-are ignored). This behavior can be disabled with the transport dsn:
-
-```yaml
-# config/packages/messenger.yaml
-
-# ...
-
-when@test:
-    framework:
-        messenger:
-            transports:
-                async: test://?disable_retries=false
-```
-
 ### Multiple Transports
 
 If you have multiple transports you'd like to test, change all their dsn's to
@@ -356,6 +339,118 @@ class MyTest extends KernelTestCase // or WebTestCase
     }
 }
 ```
+
+### Support of `DelayStamp`
+
+Support of `DelayStamp` could be enabled per transport, within its dsn:
+
+```yaml
+# config/packages/messenger.yaml
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: test://?support_delay_stamp=true
+```
+
+> [!NOTE]
+> Support of delay stamp was added in version 1.8.0.
+
+#### Usage of a clock
+
+> [!WARNING]
+> Support of delay stamp needs an implementation of [PSR-20 Clock](https://www.php-fig.org/psr/psr-20/).
+
+You can, for example use Symfony's clock component:
+```bash
+composer require symfony/clock
+```
+
+When using Symfony's clock component, the service will be automatically configured.
+Otherwise, you need to configure it manually:
+
+```yaml
+# config/services.yaml
+services:
+    app.clock:
+        class: Some\Clock\Implementation
+    Psr\Clock\ClockInterface: '@app.clock'
+```
+
+#### Example of code supporting `DelayStamp`
+
+> [!NOTE]
+> This example uses `symfony/clock` component, but you can use any other implementation of `Psr\Clock\ClockInterface`.
+
+```php
+
+// Let's say somewhere in your app, you register some actions that should occur in the future:
+
+$bus->dispatch(new Enevelope(new TakeSomeAction1(), [DelayStamp::delayFor(new \DateInterval('P1D'))])); // will be handled in 1 day
+$bus->dispatch(new Enevelope(new TakeSomeAction2(), [DelayStamp::delayFor(new \DateInterval('P3D'))])); // will be handled in 3 days
+
+// In your test, you can check that the action is not yet performed:
+
+class TestDelayedActions extends KernelTestCase
+{
+    use InteractsWithMessenger;
+    use ClockSensitiveTrait;
+
+    public function testDelayedActions(): void
+    {
+        // 1. mock the clock, in order to perform sleeps
+        $clock = self::mockTime();
+
+        // 2. trigger the action that will dispatch the two messages
+
+        // ...
+
+        // 3. assert nothing happens yet
+        $transport=$this->transport('async');
+
+        $transport->process();
+        $transport->queue()->assertCount(2);
+        $transport->acknowledged()->assertCount(0);
+
+        // 4. sleep, process queue, and assert some messages have been handled
+        $clock->sleep(60 * 60 * 24); // wait one day
+        $transport->process()->acknowledged()->assertContains(TakeSomeAction1::class);
+        $this->asssertTakeSomeAction1IsHandled();
+
+        // TakeSomeAction2 is still in the queue
+        $transport->queue()->assertCount(1);
+
+        $clock->sleep(60 * 60 * 24 * 2); // wait two other days
+        $transport->process()->acknowledged()->assertContains(TakeSomeAction2::class);
+        $this->asssertTakeSomeAction2IsHandled();
+    }
+}
+```
+
+#### `DelayStamp` and unblock mode
+
+"delayed" messages cannot be handled by the unblocking mechanism, `$transport->process()` must be called after a
+`sleep()` has been made.
+
+### Enable Retries
+
+By default, the `TestTransport` does not retry failed messages (your retry settings
+are ignored). This behavior can be disabled with the transport dsn:
+
+```yaml
+# config/packages/messenger.yaml
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: test://?disable_retries=false
+```
+
+> [!NOTE]
+> When using retries along with `support_delay_stamp` you must mock the time to sleep between retries.
+
 
 ## Bus
 

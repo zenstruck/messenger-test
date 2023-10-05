@@ -11,17 +11,20 @@
 
 namespace Zenstruck\Messenger\Test\Transport;
 
+use Psr\Clock\ClockInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerRunningEvent;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
 use Zenstruck\Assert;
+use Zenstruck\Messenger\Test\Stamp\AvailableAtStamp;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
@@ -33,12 +36,14 @@ final class TestTransport implements TransportInterface
         'catch_exceptions' => true,
         'test_serialization' => true,
         'disable_retries' => true,
+        'support_delay_stamp' => false,
     ];
 
     private string $name;
     private EventDispatcherInterface $dispatcher;
     private MessageBusInterface $bus;
     private SerializerInterface $serializer;
+    private ClockInterface|null $clock;
 
     /** @var array<string, bool> */
     private static array $intercept = [];
@@ -51,6 +56,9 @@ final class TestTransport implements TransportInterface
 
     /** @var array<string, bool> */
     private static array $disableRetries = [];
+
+    /** @var array<string, bool> */
+    private static array $supportDelayStamp = [];
 
     /** @var array<string, Envelope[]> */
     private static array $dispatched = [];
@@ -72,7 +80,7 @@ final class TestTransport implements TransportInterface
      *
      * @param array<string,bool> $options
      */
-    public function __construct(string $name, MessageBusInterface $bus, EventDispatcherInterface $dispatcher, SerializerInterface $serializer, array $options = [])
+    public function __construct(string $name, MessageBusInterface $bus, EventDispatcherInterface $dispatcher, SerializerInterface $serializer, ClockInterface|null $clock = null, array $options = [])
     {
         $options = \array_merge(self::DEFAULT_OPTIONS, $options);
 
@@ -80,11 +88,19 @@ final class TestTransport implements TransportInterface
         $this->dispatcher = $dispatcher;
         $this->bus = $bus;
         $this->serializer = $serializer;
+        $this->clock = $clock;
 
         self::$intercept[$name] ??= $options['intercept'];
         self::$catchExceptions[$name] ??= $options['catch_exceptions'];
         self::$testSerialization[$name] ??= $options['test_serialization'];
         self::$disableRetries[$name] ??= $options['disable_retries'];
+        self::$supportDelayStamp[$name] ??= $options['support_delay_stamp'];
+
+        if (!self::$supportDelayStamp[$name]) {
+            trigger_deprecation('zenstruck/messenger-test', '1.8.0', 'Not supporting DelayStamp is deprecated, support will be removed in 2.0.');
+        } elseif(!$this->clock) {
+            throw new \InvalidArgumentException(sprintf('A service aliased "%s" must be available in order to support DelayStamp. You can install for instance symfony/clock (composer require symfony/clock).', ClockInterface::class));
+        }
     }
 
     /**
@@ -228,7 +244,23 @@ final class TestTransport implements TransportInterface
             return [];
         }
 
-        return [\array_shift(self::$queue[$this->name])];
+        if (!$this->supportsDelayStamp()) {
+            return [\array_shift(self::$queue[$this->name])];
+        }
+
+        $now = $this->clock->now();
+
+        foreach (self::$queue[$this->name] as $i => $envelope) {
+            if (($availableAtStamp = $envelope->last(AvailableAtStamp::class)) && $now < $availableAtStamp->getAvailableAt()) {
+                continue;
+            }
+
+            unset(self::$queue[$this->name][$i]);
+
+            return [$envelope];
+        }
+
+        return [];
     }
 
     /**
@@ -262,6 +294,10 @@ final class TestTransport implements TransportInterface
         }
 
         $envelope = Envelope::wrap($what);
+
+        if ($this->supportsDelayStamp() && $delayStamp = $envelope->last(DelayStamp::class)) {
+            $envelope = $envelope->with(AvailableAtStamp::fromDelayStamp($delayStamp, $this->clock->now()));
+        }
 
         if ($this->isRetriesDisabled() && $envelope->last(RedeliveryStamp::class)) {
             // message is being retried, don't process
@@ -303,7 +339,7 @@ final class TestTransport implements TransportInterface
 
     public static function initialize(): void
     {
-        self::$intercept = self::$catchExceptions = self::$testSerialization = self::$disableRetries = [];
+        self::$intercept = self::$catchExceptions = self::$testSerialization = self::$disableRetries = self::$supportDelayStamp = [];
     }
 
     public static function enableMessagesCollection(): void
@@ -347,6 +383,14 @@ final class TestTransport implements TransportInterface
     private function isRetriesDisabled(): bool
     {
         return self::$disableRetries[$this->name];
+    }
+
+    /**
+     * @phpstan-assert-if-true !null $this->clock
+     */
+    private function supportsDelayStamp(): bool
+    {
+        return $this->clock && self::$supportDelayStamp[$this->name];
     }
 
     private function hasMessagesToProcess(): bool

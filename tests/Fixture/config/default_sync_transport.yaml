@@ -5,4 +5,4 @@ framework:
     messenger:
         transports:
             sync:
-                dsn: sync://
+                dsn: sync://?support_delay_stamp=true
