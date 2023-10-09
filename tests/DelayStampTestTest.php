@@ -26,8 +26,8 @@ use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageC;
  */
 final class DelayStampTestTest extends WebTestCase
 {
-    use InteractsWithMessenger;
     use ClockSensitiveTrait;
+    use InteractsWithMessenger;
 
     /**
      * @test

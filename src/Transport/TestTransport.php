@@ -98,8 +98,8 @@ final class TestTransport implements TransportInterface
 
         if (!self::$supportDelayStamp[$name]) {
             trigger_deprecation('zenstruck/messenger-test', '1.8.0', 'Not supporting DelayStamp is deprecated, support will be removed in 2.0.');
-        } elseif(!$this->clock) {
-            throw new \InvalidArgumentException(sprintf('A service aliased "%s" must be available in order to support DelayStamp. You can install for instance symfony/clock (composer require symfony/clock).', ClockInterface::class));
+        } elseif (!$this->clock) {
+            throw new \InvalidArgumentException(\sprintf('A service aliased "%s" must be available in order to support DelayStamp. You can install for instance symfony/clock (composer require symfony/clock).', ClockInterface::class));
         }
     }
 

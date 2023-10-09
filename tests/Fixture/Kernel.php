@@ -47,7 +47,7 @@ class Kernel extends BaseKernel
     {
         $loader->load(\sprintf('%s/config/%s.yaml', __DIR__, $this->getEnvironment()));
 
-        if (class_exists(Clock::class) && !$c->has(\Psr\Clock\ClockInterface::class)) {
+        if (\class_exists(Clock::class) && !$c->has(\Psr\Clock\ClockInterface::class)) {
             $c->register(\Psr\Clock\ClockInterface::class, Clock::class)->setPublic(true);
         }
     }

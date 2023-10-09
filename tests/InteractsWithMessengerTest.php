@@ -42,8 +42,8 @@ use Zenstruck\Messenger\Test\Transport\TestTransport;
  */
 final class InteractsWithMessengerTest extends WebTestCase
 {
-    use InteractsWithMessenger;
     use ClockSensitiveTrait;
+    use InteractsWithMessenger;
 
     /**
      * @test
