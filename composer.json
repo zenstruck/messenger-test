@@ -20,7 +20,7 @@
     },
     "require-dev": {
         "phpstan/phpstan": "^1.4",
-        "phpunit/phpunit": "^9.5.0",
+        "phpunit/phpunit": "^9.6.0",
         "symfony/browser-kit": "^5.4|^6.0",
         "symfony/clock": "^6.3",
         "symfony/phpunit-bridge": "^5.4|^6.0",
