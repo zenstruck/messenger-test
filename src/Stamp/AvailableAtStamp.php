@@ -1,12 +1,14 @@
 <?php
 
-declare(strict_types=1);
 
 namespace Zenstruck\Messenger\Test\Stamp;
 
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\StampInterface;
 
+/**
+ * @internal
+ */
 final class AvailableAtStamp implements StampInterface
 {
     public function __construct(private \DateTimeImmutable $availableAt)
