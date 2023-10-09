@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v1.7.3](https://github.com/zenstruck/messenger-test/releases/tag/v1.7.3)
+
+October 9th, 2023 - [v1.7.2...v1.7.3](https://github.com/zenstruck/messenger-test/compare/v1.7.2...v1.7.3)
+
+* 68b535a minor: Add conditional return type for `EnvelopeCollection::messages` (#64) by @norkunas
+
 ## [v1.7.2](https://github.com/zenstruck/messenger-test/releases/tag/v1.7.2)
 
 February 24th, 2023 - [v1.7.1...v1.7.2](https://github.com/zenstruck/messenger-test/compare/v1.7.1...v1.7.2)
