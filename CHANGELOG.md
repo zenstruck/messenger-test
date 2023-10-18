@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v1.8.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.8.0)
+
+October 18th, 2023 - [v1.7.3...v1.8.0](https://github.com/zenstruck/messenger-test/compare/v1.7.3...v1.8.0)
+
+* 71d66ed feat: support delay stamp and require php 8.1 (#66) by @nikophil, @kbond
+
 ## [v1.7.3](https://github.com/zenstruck/messenger-test/releases/tag/v1.7.3)
 
 October 9th, 2023 - [v1.7.2...v1.7.3](https://github.com/zenstruck/messenger-test/compare/v1.7.2...v1.7.3)
