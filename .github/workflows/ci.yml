@@ -14,11 +14,14 @@ jobs:
       matrix:
         php: [8.1, 8.2, 8.3]
         deps: [highest]
-        symfony: [5.4.*, 6.3.*, 6.4.*]
+        symfony: [5.4.*, 6.3.*, 6.4.*, 7.0.*]
         include:
           - php: 8.1
             deps: lowest
             symfony: '*'
+        exclude:
+          - php: 8.1
+            symfony: 7.0.*
     steps:
       - uses: zenstruck/.github@php-test-symfony
         with:
