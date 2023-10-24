@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v1.9.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.9.0)
+
+October 24th, 2023 - [v1.8.0...v1.9.0](https://github.com/zenstruck/messenger-test/compare/v1.8.0...v1.9.0)
+
+* 0554e7c feat: Symfony 7 support (#67) by @kbond
+
 ## [v1.8.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.8.0)
 
 October 18th, 2023 - [v1.7.3...v1.8.0](https://github.com/zenstruck/messenger-test/compare/v1.7.3...v1.8.0)
