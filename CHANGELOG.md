@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v1.9.1](https://github.com/zenstruck/messenger-test/releases/tag/v1.9.1)
+
+November 23rd, 2023 - [v1.9.0...v1.9.1](https://github.com/zenstruck/messenger-test/compare/v1.9.0...v1.9.1)
+
+* baf5893 fix: set support_delay_stamp to false by default (#69) by @nikophil
+
 ## [v1.9.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.9.0)
 
 October 24th, 2023 - [v1.8.0...v1.9.0](https://github.com/zenstruck/messenger-test/compare/v1.8.0...v1.9.0)
