@@ -55,7 +55,7 @@ final class TestTransportFactory implements TransportFactoryInterface
             'catch_exceptions' => \filter_var($query['catch_exceptions'] ?? true, \FILTER_VALIDATE_BOOLEAN),
             'test_serialization' => \filter_var($query['test_serialization'] ?? true, \FILTER_VALIDATE_BOOLEAN),
             'disable_retries' => \filter_var($query['disable_retries'] ?? true, \FILTER_VALIDATE_BOOLEAN),
-            'support_delay_stamp' => \filter_var($query['support_delay_stamp'] ?? true, \FILTER_VALIDATE_BOOLEAN),
+            'support_delay_stamp' => \filter_var($query['support_delay_stamp'] ?? false, \FILTER_VALIDATE_BOOLEAN),
         ];
     }
 }
