@@ -169,7 +169,7 @@ final class TestTransport implements TransportInterface
                 }
 
                 ++$processCount;
-            }
+            },
         );
 
         if ($number > 0) {
@@ -182,7 +182,7 @@ final class TestTransport implements TransportInterface
                 WorkerMessageFailedEvent::class,
                 $listeners[WorkerMessageFailedEvent::class] = static function(WorkerMessageFailedEvent $event) {
                     throw $event->getThrowable();
-                }
+                },
             );
         }
 
@@ -307,7 +307,7 @@ final class TestTransport implements TransportInterface
         if ($this->shouldTestSerialization()) {
             Assert::try(
                 fn() => $this->serializer->decode($this->serializer->encode($envelope)),
-                'A problem occurred in the serialization process.'
+                'A problem occurred in the serialization process.',
             );
         }
 

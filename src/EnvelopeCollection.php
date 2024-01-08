@@ -62,7 +62,7 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
             Assert::that($messages)->hasCount(
                 $times,
                 'Expected to find "{message}" {expected} times but found {actual} times.',
-                ['message' => $messageClass]
+                ['message' => $messageClass],
             );
 
             return $this;
@@ -80,7 +80,7 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
     {
         Assert::that($this->messages($messageClass))->isEmpty(
             'Found message "{message}" but should not.',
-            ['message' => $messageClass]
+            ['message' => $messageClass],
         );
 
         return $this;

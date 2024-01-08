@@ -46,7 +46,7 @@ final class TestEnvelope
     {
         Assert::that($this->envelope->all($class))->isNotEmpty(
             'Expected to find stamp "{stamp}" but did not.',
-            ['stamp' => $class]
+            ['stamp' => $class],
         );
 
         return $this;
@@ -59,7 +59,7 @@ final class TestEnvelope
     {
         Assert::that($this->envelope->all($class))->isEmpty(
             'Expected to not find "{stamp}" but did.',
-            ['stamp' => $class]
+            ['stamp' => $class],
         );
 
         return $this;

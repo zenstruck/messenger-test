@@ -841,7 +841,7 @@ final class InteractsWithMessengerTest extends WebTestCase
             WorkerMessageHandledEvent::class,
             static function(WorkerMessageHandledEvent $event) use (&$messages) {
                 $messages[] = $event->getEnvelope()->getMessage();
-            }
+            },
         );
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch($message = new MessageA());
