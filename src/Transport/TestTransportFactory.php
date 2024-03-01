@@ -25,7 +25,7 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
  */
 final class TestTransportFactory implements TransportFactoryInterface
 {
-    public function __construct(private MessageBusInterface $bus, private EventDispatcherInterface $dispatcher, private ClockInterface|null $clock = null)
+    public function __construct(private MessageBusInterface $bus, private EventDispatcherInterface $dispatcher, private ?ClockInterface $clock = null)
     {
     }
 

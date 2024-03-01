@@ -43,7 +43,7 @@ final class TestTransport implements TransportInterface
     private EventDispatcherInterface $dispatcher;
     private MessageBusInterface $bus;
     private SerializerInterface $serializer;
-    private ClockInterface|null $clock;
+    private ?ClockInterface $clock;
 
     /** @var array<string, bool> */
     private static array $intercept = [];
@@ -80,7 +80,7 @@ final class TestTransport implements TransportInterface
      *
      * @param array<string,bool> $options
      */
-    public function __construct(string $name, MessageBusInterface $bus, EventDispatcherInterface $dispatcher, SerializerInterface $serializer, ClockInterface|null $clock = null, array $options = [])
+    public function __construct(string $name, MessageBusInterface $bus, EventDispatcherInterface $dispatcher, SerializerInterface $serializer, ?ClockInterface $clock = null, array $options = [])
     {
         $options = \array_merge(self::DEFAULT_OPTIONS, $options);
 
