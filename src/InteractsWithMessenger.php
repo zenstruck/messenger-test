@@ -11,6 +11,8 @@
 
 namespace Zenstruck\Messenger\Test;
 
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\Before;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Zenstruck\Messenger\Test\Bus\TestBus;
 use Zenstruck\Messenger\Test\Bus\TestBusRegistry;
@@ -27,6 +29,7 @@ trait InteractsWithMessenger
      *
      * @before
      */
+    #[Before]
     final protected static function _initializeTestTransports(): void
     {
         TestTransport::initialize();
@@ -37,6 +40,7 @@ trait InteractsWithMessenger
      *
      * @before
      */
+    #[Before]
     final protected static function _enableMessagesCollection(): void
     {
         TestTransport::enableMessagesCollection();
@@ -48,6 +52,7 @@ trait InteractsWithMessenger
      *
      * @after
      */
+    #[After]
     final protected static function _disableMessagesCollection(): void
     {
         TestTransport::disableMessagesCollection();
@@ -59,6 +64,7 @@ trait InteractsWithMessenger
      *
      * @after
      */
+    #[After]
     final protected static function _resetMessengerTransports(): void
     {
         TestTransport::resetAll();
