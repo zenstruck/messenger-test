@@ -20,7 +20,6 @@ use Zenstruck\Messenger\Test\InteractsWithMessenger;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageB;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageC;
-use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageD;
 
 /**
  * @author Nicolas PHILIPPE <nikophil@gmail.com>
