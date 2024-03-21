@@ -22,6 +22,8 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
  * @author Kevin Bond <kevinbond@gmail.com>
  *
  * @internal
+ *
+ * @implements TransportFactoryInterface<TestTransport>
  */
 final class TestTransportFactory implements TransportFactoryInterface
 {
@@ -36,7 +38,7 @@ final class TestTransportFactory implements TransportFactoryInterface
 
     public function supports(string $dsn, array $options): bool // @phpstan-ignore-line
     {
-        return 0 === \mb_strpos($dsn, 'test://');
+        return \str_starts_with($dsn, 'test://');
     }
 
     /**

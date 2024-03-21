@@ -16,11 +16,8 @@ use Zenstruck\Messenger\Test\EnvelopeCollection;
 
 final class BusEnvelopeCollection extends EnvelopeCollection
 {
-    private TestBus $bus;
-
-    public function __construct(TestBus $bus, Envelope ...$envelope)
+    public function __construct(private TestBus $bus, Envelope ...$envelope)
     {
-        $this->bus = $bus;
         parent::__construct(...$envelope);
     }
 
