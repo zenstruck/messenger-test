@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [v1.9.2](https://github.com/zenstruck/messenger-test/releases/tag/v1.9.2)
+
+March 21st, 2024 - [v1.9.1...v1.9.2](https://github.com/zenstruck/messenger-test/compare/v1.9.1...v1.9.2)
+
+* d1c4d37 fix: add attributes to support PHPUnit 10 + 11 (#73) by @mickverm
+* 99856ba docs: add return types to arrow functions (#70) by @carusogabriel
+
 ## [v1.9.1](https://github.com/zenstruck/messenger-test/releases/tag/v1.9.1)
 
 November 23rd, 2023 - [v1.9.0...v1.9.1](https://github.com/zenstruck/messenger-test/compare/v1.9.0...v1.9.1)
