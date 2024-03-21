@@ -22,6 +22,8 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
  * @author Kevin Bond <kevinbond@gmail.com>
  *
  * @internal
+ *
+ * @implements TransportFactoryInterface<TestTransport>
  */
 final class TestTransportFactory implements TransportFactoryInterface
 {
