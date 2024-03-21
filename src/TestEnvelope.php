@@ -22,11 +22,8 @@ use Zenstruck\Assert;
  */
 final class TestEnvelope
 {
-    private Envelope $envelope;
-
-    public function __construct(Envelope $envelope)
+    public function __construct(private Envelope $envelope)
     {
-        $this->envelope = $envelope;
     }
 
     /**

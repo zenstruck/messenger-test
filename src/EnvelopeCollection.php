@@ -86,10 +86,7 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
         return $this;
     }
 
-    /**
-     * @param string|callable|null $filter
-     */
-    final public function first($filter = null): TestEnvelope
+    final public function first(callable|string|null $filter = null): TestEnvelope
     {
         if (null === $filter) {
             // just the first envelope
@@ -157,7 +154,7 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
 
     private static function normalizeFilter(callable $filter): callable
     {
-        $function = new \ReflectionFunction(\Closure::fromCallable($filter));
+        $function = new \ReflectionFunction($filter(...));
 
         if (!$parameter = $function->getParameters()[0] ?? null) {
             return $filter;
@@ -172,8 +169,8 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
         }
 
         // user used message class name as type-hint
-        return function(Envelope $envelope) use ($filter, $type) {
-            if ($type->getName() !== \get_class($envelope->getMessage())) {
+        return static function(Envelope $envelope) use ($filter, $type) {
+            if ($type->getName() !== $envelope->getMessage()::class) {
                 return false;
             }
 
