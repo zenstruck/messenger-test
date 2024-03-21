@@ -20,6 +20,7 @@ use Zenstruck\Messenger\Test\InteractsWithMessenger;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageB;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageC;
+use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageD;
 
 /**
  * @author Nicolas PHILIPPE <nikophil@gmail.com>
@@ -85,6 +86,26 @@ final class DelayStampTestTest extends WebTestCase
         $transport->process()->acknowledged()->assertCount(2)->assertContains(MessageC::class);
 
         $clock->sleep(5);
+        $transport->process()->acknowledged()->assertCount(3)->assertContains(MessageA::class);
+    }
+
+    /**
+     * @test
+     */
+    public function it_handles_directly_messages_with_negative_delay_stamp(): void
+    {
+        $clock = self::mockTime();
+
+        $transport = $this->transport('async');
+        $transport->send(new Envelope(new MessageA(), [new DelayStamp(5_000)]));
+        $transport->send(new Envelope(new MessageB()));
+        $transport->send(new Envelope(new MessageC(), [new DelayStamp(-5_000)]));
+
+        $transport->acknowledged()->assertCount(0);
+
+        $transport->process()->acknowledged()->assertCount(2)->assertContains(MessageB::class)->assertContains(MessageC::class);
+
+        $clock->sleep(10);
         $transport->process()->acknowledged()->assertCount(3)->assertContains(MessageA::class);
     }
 
