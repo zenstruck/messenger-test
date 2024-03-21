@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [v1.9.3](https://github.com/zenstruck/messenger-test/releases/tag/v1.9.3)
+
+March 21st, 2024 - [v1.9.2...v1.9.3](https://github.com/zenstruck/messenger-test/compare/v1.9.2...v1.9.3)
+
+* d4a8525 minor: small cleanup (#76) by @kbond
+* b91a87f minor: fix sca (#76) by @kbond
+* 82cf50b minor: fix typo (#76) by @kbond
+* 9f31c86 fix: handle DelayStamp in the past (#75) by @benito103e
+
 ## [v1.9.2](https://github.com/zenstruck/messenger-test/releases/tag/v1.9.2)
 
 March 21st, 2024 - [v1.9.1...v1.9.2](https://github.com/zenstruck/messenger-test/compare/v1.9.1...v1.9.2)
