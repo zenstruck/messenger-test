@@ -530,6 +530,20 @@ class MyTest extends KernelTestCase
 
 ## Troubleshooting
 
+### Resetting all collected messages
+
+When you run the full phpunit test suite, and some tests add messages to the transports without processing them, the messages remain in these transports for subsequent tests.
+This can cause assertContains, assertCount etc. to fail.
+
+So you can manually empty the transports in the setUp :
+```php
+protected function setUp(): void
+{
+    parent::setUp();
+    TestTransport::resetAll();
+}
+```
+
 ### Detached Doctrine Entities
 
 When processing messages in your tests that interact with Doctrine entities you may
