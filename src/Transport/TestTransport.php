@@ -23,13 +23,14 @@ use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
+use Symfony\Contracts\Service\ResetInterface;
 use Zenstruck\Assert;
 use Zenstruck\Messenger\Test\Stamp\AvailableAtStamp;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
-final class TestTransport implements TransportInterface
+final class TestTransport implements TransportInterface, ResetInterface
 {
     private const DEFAULT_OPTIONS = [
         'intercept' => true,
