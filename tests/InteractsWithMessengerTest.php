@@ -917,6 +917,52 @@ final class InteractsWithMessengerTest extends WebTestCase
         ;
     }
 
+    /**
+     * @test
+     */
+    public function transport_is_message_count_aware(): void
+    {
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        $this->assertSame(2, $this->transport()->getMessageCount());
+
+        $this->transport()->process();
+
+        $this->assertSame(0, $this->transport()->getMessageCount());
+    }
+
+    /**
+     * @test
+     */
+    public function transport_is_listable(): void
+    {
+        self::getContainer()->get(MessageBusInterface::class)->dispatch($msgA = new MessageA());
+        self::getContainer()->get(MessageBusInterface::class)->dispatch($msgB = new MessageB());
+
+        $messages = \array_map(fn(Envelope $e) => $e->getMessage(), $this->transport()->all());
+
+        $this->assertSame([$msgA, $msgB], $messages);
+
+        $messages = \array_map(fn(Envelope $e) => $e->getMessage(), $this->transport()->all(1));
+
+        $this->assertSame([$msgA], $messages);
+
+        $this->transport()->process();
+
+        $this->assertEmpty($this->transport()->all());
+    }
+
+    /**
+     * @test
+     */
+    public function cannot_use_find_on_transport(): void
+    {
+        $this->expectException(\BadMethodCallException::class);
+
+        $this->transport()->find(1);
+    }
+
     protected static function bootKernel(array $options = []): KernelInterface // @phpstan-ignore-line
     {
         return parent::bootKernel(\array_merge(['environment' => 'single_transport'], $options));

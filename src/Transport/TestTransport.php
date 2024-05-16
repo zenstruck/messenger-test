@@ -20,16 +20,19 @@ use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
+use Symfony\Component\Messenger\Transport\Receiver\ListableReceiverInterface;
+use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
 use Zenstruck\Assert;
 use Zenstruck\Messenger\Test\Stamp\AvailableAtStamp;
+use Zenstruck\Messenger\Test\TestEnvelope;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
-final class TestTransport implements TransportInterface
+final class TestTransport implements TransportInterface, ListableReceiverInterface, MessageCountAwareInterface
 {
     private const DEFAULT_OPTIONS = [
         'intercept' => true,
@@ -277,6 +280,24 @@ final class TestTransport implements TransportInterface
     public function reject(Envelope $envelope): void
     {
         $this->collectMessage(self::$rejected, $envelope);
+    }
+
+    public function all(?int $limit = null): iterable
+    {
+        return \array_map(
+            fn(TestEnvelope $envelope) => $envelope->envelope,
+            \array_slice($this->queue()->all(), 0, $limit),
+        );
+    }
+
+    public function find(mixed $id): ?Envelope
+    {
+        throw new \BadMethodCallException('Not supported.');
+    }
+
+    public function getMessageCount(): int
+    {
+        return $this->queue()->count();
     }
 
     /**

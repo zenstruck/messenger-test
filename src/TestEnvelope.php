@@ -22,7 +22,7 @@ use Zenstruck\Assert;
  */
 final class TestEnvelope
 {
-    public function __construct(private Envelope $envelope)
+    public function __construct(public readonly Envelope $envelope)
     {
     }
 
