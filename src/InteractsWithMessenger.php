@@ -50,6 +50,17 @@ trait InteractsWithMessenger
     /**
      * @internal
      *
+     * @before
+     */
+    #[Before]
+    final protected static function _disableResetOnKernelShutdown(): void
+    {
+        TestTransport::disableResetOnKernelShutdown();
+    }
+
+    /**
+     * @internal
+     *
      * @after
      */
     #[After]
@@ -69,6 +80,17 @@ trait InteractsWithMessenger
     {
         TestTransport::resetAll();
         TestBus::resetAll();
+    }
+
+    /**
+     * @internal
+     *
+     * @after
+     */
+    #[After]
+    final protected static function _enableResetOnKernelShutdown(): void
+    {
+        TestTransport::enableResetOnKernelShutdown();
     }
 
     /**

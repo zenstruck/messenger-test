@@ -62,14 +62,17 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
 
         foreach ($container->findTaggedServiceIds('messenger.receiver') as $id => $tags) {
             $name = $id;
+            $transport = $container->getDefinition($name);
 
-            if (!$class = $container->getDefinition($name)->getClass()) {
+            if (!$class = $transport->getClass()) {
                 continue;
             }
 
             if (!\is_a($class, TransportInterface::class, true)) {
                 continue;
             }
+
+            $transport->addTag('kernel.reset', ['method' => 'resetOnKernelShutdown', 'on_invalid' => 'ignore']);
 
             foreach ($tags as $tag) {
                 if (isset($tag['alias'])) {

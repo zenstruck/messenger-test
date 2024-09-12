@@ -77,6 +77,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
 
     // this setting applies to all transports
     private static bool $enableMessagesCollection = true;
+    private static bool $resetOnKernelShutdownEnabled = true;
 
     /**
      * @internal
@@ -409,6 +410,25 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     public function supportsDelayStamp(): bool
     {
         return $this->clock && self::$supportDelayStamp[$this->name];
+    }
+
+    public function resetOnKernelShutdown(): void
+    {
+        if (!self::$resetOnKernelShutdownEnabled) {
+            return;
+        }
+
+        $this->reset();
+    }
+
+    public static function enableResetOnKernelShutdown(): void
+    {
+        self::$resetOnKernelShutdownEnabled = true;
+    }
+
+    public static function disableResetOnKernelShutdown(): void
+    {
+        self::$resetOnKernelShutdownEnabled = false;
     }
 
     /**
