@@ -16,6 +16,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageAHandler;
+use Zenstruck\Messenger\Test\Transport\TestTransport;
 use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
 
 /**
@@ -24,6 +25,12 @@ use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
  */
 class NotInteractsWithMessengerBeforeTest extends KernelTestCase
 {
+    public static function setUpBeforeClass(): void
+    {
+        // Reset to default value to emulate first test in suit behavior
+        TestTransport::enableMessagesCollection();
+    }
+
     /**
      * @test
      */
