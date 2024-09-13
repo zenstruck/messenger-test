@@ -27,7 +27,7 @@ class NotInteractsWithMessengerBeforeTest extends KernelTestCase
 {
     public static function setUpBeforeClass(): void
     {
-        // Reset to default value to emulate first test in suit behavior
+        // Reset to default value to emulate first test in suite behavior
         TestTransport::enableMessagesCollection();
     }
 
