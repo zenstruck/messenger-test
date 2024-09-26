@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [v1.11.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.11.0)
+
+September 26th, 2024 - [v1.10.0...v1.11.0](https://github.com/zenstruck/messenger-test/compare/v1.10.0...v1.11.0)
+
+* d9d711b Reset TestTransport on ensureKernelShutdown (#90) by @HypeMC
+* 36329a1 chore: upgrade CI matrix (#92) by @nikophil
+* 1f78317 docs: Add installation step to add the bundle in the config (#85) by @dazz, @kbond
+
 ## [v1.10.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.10.0)
 
 July 31st, 2024 - [v1.9.3...v1.10.0](https://github.com/zenstruck/messenger-test/compare/v1.9.3...v1.10.0)
