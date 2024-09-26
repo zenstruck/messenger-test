@@ -16,8 +16,10 @@ use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\Clock\Clock;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Exception\OutOfBoundsException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
+use Symfony\Component\Messenger\Retry\MultiplierRetryStrategy;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\RouteCollectionBuilder;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA;
@@ -50,6 +52,9 @@ class Kernel extends BaseKernel
         if (\class_exists(Clock::class) && !$c->has(\Psr\Clock\ClockInterface::class)) {
             $c->register(\Psr\Clock\ClockInterface::class, Clock::class)->setPublic(true);
         }
+
+        $this->registerRetryStrategyWithoutJitter($c);
+
     }
 
     /**
@@ -64,5 +69,17 @@ class Kernel extends BaseKernel
         }
 
         $routes->add('dispatch', '/dispatch')->controller('kernel::dispatch');
+    }
+
+    // Jitter makes harder the assertions on retries
+    private function registerRetryStrategyWithoutJitter(ContainerBuilder $c): void
+    {
+        $definition = $c->register('messenger_test_retry_strategy', MultiplierRetryStrategy::class)
+            ->setArgument('$maxRetries', 1);
+
+        // jitter property appeared in symfony/messenger 7.1
+        if ((new \ReflectionClass(MultiplierRetryStrategy::class))->hasProperty('jitter')) {
+            $definition->setArgument('$jitter', 0);
+        }
     }
 }

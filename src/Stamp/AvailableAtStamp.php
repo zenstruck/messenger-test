@@ -26,9 +26,9 @@ final class AvailableAtStamp implements StampInterface
     public static function fromDelayStamp(DelayStamp $delayStamp, \DateTimeImmutable $now): self
     {
         return new self(
-            $now->modify(\sprintf('%s%d seconds',
+            $now->modify(\sprintf('%s%d milliseconds',
                 $delayStamp->getDelay() > 0 ? '+' : '-',
-                \abs($delayStamp->getDelay() / 1000)
+                \abs($delayStamp->getDelay())
             ))
         );
     }

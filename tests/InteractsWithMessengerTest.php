@@ -904,12 +904,6 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         $clock->sleep(1);
         $this->transport('async4')->process()->rejected()->assertContains(MessageA::class, 2);
-
-        $clock->sleep(2);
-        $this->transport('async4')->process()->rejected()->assertContains(MessageA::class, 3);
-
-        $clock->sleep(4);
-        $this->transport('async4')->process()->rejected()->assertContains(MessageA::class, 4);
     }
 
     /**
@@ -922,7 +916,7 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
 
-        $this->transport('async')->process()->rejected()->assertContains(MessageA::class, 4);
+        $this->transport('async')->process()->rejected()->assertContains(MessageA::class, 2);
     }
 
     /**

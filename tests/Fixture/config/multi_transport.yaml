@@ -11,6 +11,8 @@ framework:
             async3: in-memory://
             async4:
                 dsn: test://?disable_retries=false&support_delay_stamp=true
+                retry_strategy:
+                    service: messenger_test_retry_strategy
             async5:
                 dsn: test://?intercept=false&catch_exceptions=false&test_serialization=true&support_delay_stamp=true
         routing:

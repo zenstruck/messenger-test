@@ -6,6 +6,8 @@ framework:
         transports:
             async:
                 dsn: test://?disable_retries=false&support_delay_stamp=false
+                retry_strategy:
+                    service: messenger_test_retry_strategy
         routing:
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: [async]
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageB: [async]
