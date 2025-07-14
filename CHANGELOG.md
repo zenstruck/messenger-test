@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [v1.11.1](https://github.com/zenstruck/messenger-test/releases/tag/v1.11.1)
+
+July 14th, 2025 - [v1.11.0...v1.11.1](https://github.com/zenstruck/messenger-test/compare/v1.11.0...v1.11.1)
+
+* 7fae735 minor: throw exceptions on uninitialized transport (#96) by @kbond
+* 64a93e8 minor: fix flaky test (#96) by @kbond
+
 ## [v1.11.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.11.0)
 
 September 26th, 2024 - [v1.10.0...v1.11.0](https://github.com/zenstruck/messenger-test/compare/v1.10.0...v1.11.0)
