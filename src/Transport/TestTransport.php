@@ -366,7 +366,8 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     public static function resetAll(): void
     {
-        self::$queue = self::$dispatched = self::$acknowledged = self::$rejected = self::$intercept = self::$catchExceptions = [];
+        self::$queue = self::$dispatched = self::$acknowledged = self::$rejected = [];
+        self::initialize();
     }
 
     public static function initialize(): void
@@ -386,22 +387,22 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
 
     public function isIntercepting(): bool
     {
-        return self::$intercept[$this->name];
+        return self::$intercept[$this->name] ?? throw new \LogicException(\sprintf('Transport "%s" is not initialized.', $this->name));
     }
 
     public function isCatchingExceptions(): bool
     {
-        return self::$catchExceptions[$this->name];
+        return self::$catchExceptions[$this->name] ?? throw new \LogicException(\sprintf('Transport "%s" is not initialized.', $this->name));
     }
 
     public function shouldTestSerialization(): bool
     {
-        return self::$testSerialization[$this->name];
+        return self::$testSerialization[$this->name] ?? throw new \LogicException(\sprintf('Transport "%s" is not initialized.', $this->name));
     }
 
     public function isRetriesDisabled(): bool
     {
-        return self::$disableRetries[$this->name];
+        return self::$disableRetries[$this->name] ?? throw new \LogicException(\sprintf('Transport "%s" is not initialized.', $this->name));
     }
 
     /**
@@ -409,7 +410,11 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     public function supportsDelayStamp(): bool
     {
-        return $this->clock && self::$supportDelayStamp[$this->name];
+        if (!$this->clock) {
+            return false;
+        }
+
+        return self::$supportDelayStamp[$this->name] ?? throw new \LogicException(\sprintf('Transport "%s" is not initialized.', $this->name));;
     }
 
     public function resetOnKernelShutdown(): void
