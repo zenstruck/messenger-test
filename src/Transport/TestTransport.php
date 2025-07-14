@@ -414,7 +414,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             return false;
         }
 
-        return self::$supportDelayStamp[$this->name] ?? throw new \LogicException(\sprintf('Transport "%s" is not initialized.', $this->name));;
+        return self::$supportDelayStamp[$this->name] ?? throw new \LogicException(\sprintf('Transport "%s" is not initialized.', $this->name));
     }
 
     public function resetOnKernelShutdown(): void
