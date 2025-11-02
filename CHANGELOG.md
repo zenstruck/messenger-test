@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v1.12.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.12.0)
+
+November 2nd, 2025 - [v1.11.1...v1.12.0](https://github.com/zenstruck/messenger-test/compare/v1.11.1...v1.12.0)
+
+* 67347f7 chore: support Symfony 8 (#99) by @nikophil
+
 ## [v1.11.1](https://github.com/zenstruck/messenger-test/releases/tag/v1.11.1)
 
 July 14th, 2025 - [v1.11.0...v1.11.1](https://github.com/zenstruck/messenger-test/compare/v1.11.0...v1.11.1)
