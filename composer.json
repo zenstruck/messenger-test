@@ -14,17 +14,17 @@
     "require": {
         "php": ">=8.1",
         "symfony/deprecation-contracts": "^2.2|^3.0",
-        "symfony/framework-bundle": "^5.4.44|^6.0|^7.0|^8.0",
-        "symfony/messenger": "^5.4|^6.0|^7.0|^8.0",
+        "symfony/framework-bundle": "^6.4.15|^7.0|^8.0",
+        "symfony/messenger": "^6.4|^7.0|^8.0",
         "zenstruck/assert": "^1.0"
     },
     "require-dev": {
         "phpstan/phpstan": "^1.4",
         "phpunit/phpunit": "^9.6.0",
-        "symfony/browser-kit": "^5.4|^6.0|^7.0|^8.0",
-        "symfony/clock": "^6.3|^7.0|^8.0",
-        "symfony/phpunit-bridge": "^5.4|^6.0|^7.0|^8.0",
-        "symfony/yaml": "^5.4|^6.0|^7.0"
+        "symfony/browser-kit": "^6.4|^7.0|^8.0",
+        "symfony/clock": "^6.4|^7.0|^8.0",
+        "symfony/phpunit-bridge": "^6.4|^7.0|^8.0",
+        "symfony/yaml": "^6.4|^7.0|^8.0"
     },
     "suggest": {
         "symfony/clock": "A PSR-20 clock implementation in order to support DelayStamp."
@@ -32,9 +32,6 @@
     "config": {
         "preferred-install": "dist",
         "sort-packages": true
-    },
-    "conflict": {
-        "symfony/framework-bundle": "5.4.5|6.0.5"
     },
     "autoload": {
         "psr-4": { "Zenstruck\\Messenger\\Test\\": "src/" }
