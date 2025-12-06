@@ -8,40 +8,7 @@ on:
 
 jobs:
   test:
-    name: PHP ${{ matrix.php }}, SF ${{ matrix.symfony }} - ${{ matrix.deps }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php: [8.2, 8.3, 8.4]
-        deps: [highest]
-        symfony: [6.4.*, 7.3.*, 8.0.*]
-        include:
-          - php: 8.1
-            deps: lowest
-            symfony: '*'
-          - php: 8.1
-            deps: highest
-            symfony: 5.4.*
-          - php: 8.2
-            deps: highest
-            symfony: 5.4.*
-          - php: 8.3
-            deps: highest
-            symfony: 5.4.*
-          - php: 8.4
-            deps: highest
-            symfony: 5.4.*
-        exclude:
-          - php: 8.2
-            symfony: 8.0.*
-          - php: 8.3
-            symfony: 8.0.*
-    steps:
-      - uses: zenstruck/.github@php-test-symfony
-        with:
-          php: ${{ matrix.php }}
-          symfony: ${{ matrix.symfony }}
-          deps: ${{ matrix.deps }}
+    uses: zenstruck/.github/.github/workflows/php-test-symfony.yml@main
 
   code-coverage:
     uses: zenstruck/.github/.github/workflows/php-coverage-codecov.yml@main
@@ -58,7 +25,7 @@ jobs:
     if: (github.event_name == 'push' || github.event_name == 'schedule') && !startsWith(github.ref, 'refs/tags') && github.repository_owner == 'zenstruck'
     runs-on: ubuntu-latest
     steps:
-      - uses: zenstruck/.github@php-cs-fixer
+      - uses: zenstruck/.github/actions/php-cs-fixer@main
         with:
           php: 8.0
           key: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -69,7 +36,7 @@ jobs:
     if: (github.event_name == 'push' || github.event_name == 'schedule') && !startsWith(github.ref, 'refs/tags') && github.repository_owner == 'zenstruck'
     runs-on: ubuntu-latest
     steps:
-      - uses: zenstruck/.github@sync-with-template
+      - uses: zenstruck/.github/actions/sync-with-template@main
         with:
           key: ${{ secrets.GPG_PRIVATE_KEY }}
           token: ${{ secrets.COMPOSER_TOKEN }}

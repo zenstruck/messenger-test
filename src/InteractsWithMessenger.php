@@ -22,7 +22,7 @@ use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
-trait InteractsWithMessenger
+trait InteractsWithMessenger // @phpstan-ignore trait.unused
 {
     /**
      * @internal
