@@ -19,7 +19,7 @@
         "zenstruck/assert": "^1.0"
     },
     "require-dev": {
-        "phpstan/phpstan": "^1.4",
+        "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^9.6.0",
         "symfony/browser-kit": "^6.4|^7.0|^8.0",
         "symfony/clock": "^6.4|^7.0|^8.0",

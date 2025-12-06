@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * This file is part of the zenstruck/messenger-test package.
  *
@@ -9,8 +11,6 @@
  * file that was distributed with this source code.
  */
 
-declare(strict_types=1);
-
 namespace Zenstruck\Messenger\Test\Tests\Fixture\Messenger;
 
 class MessageH
@@ -19,19 +19,18 @@ class MessageH
     {
     }
 
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
     public function __serialize(): array
     {
         return [$this->name];
     }
 
-
     public function __unserialize(array $data): void
     {
         // make unserialization fail
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
     }
 }

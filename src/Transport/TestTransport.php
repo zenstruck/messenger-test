@@ -312,8 +312,8 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     }
 
     /**
-     * @param Envelope|object|array{headers?:mixed[],body:string} $what object: will be wrapped in envelope
-     *                                                                  array: will be decoded into envelope
+     * @param Envelope|object|array{body: string, headers?: array<string, string>} $what object: will be wrapped in envelope
+     *                                                                                   array: will be decoded into envelope
      */
     public function send($what): Envelope
     {
