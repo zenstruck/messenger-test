@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [v1.13.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.13.0)
+
+December 6th, 2025 - [v1.12.0...v1.13.0](https://github.com/zenstruck/messenger-test/compare/v1.12.0...v1.13.0)
+
+* a2fef7e chore: update CI (#100) by @kbond
+* 67f1965 chore: upgrade PHPStan to 2.x (#100) by @kbond
+* 608fc78 feat: drop Symfony 5.4 (#100) by @kbond
+* 53d294a chore: normalize CI (#100) by @kbond
+
 ## [v1.12.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.12.0)
 
 November 2nd, 2025 - [v1.11.1...v1.12.0](https://github.com/zenstruck/messenger-test/compare/v1.11.1...v1.12.0)
