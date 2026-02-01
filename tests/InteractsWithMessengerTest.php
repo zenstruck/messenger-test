@@ -230,9 +230,9 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         $this->assertSame($m1, $this->transport()->queue()->first()->getMessage());
         $this->assertSame($m2, $this->transport()->queue()->first(MessageB::class)->getMessage());
-        $this->assertSame($m3, $this->transport()->queue()->first(fn(Envelope $e) => $e->getMessage()->fail)->getMessage());
-        $this->assertSame($m3, $this->transport()->queue()->first(fn($e) => $e->getMessage()->fail)->getMessage());
-        $this->assertSame($m3, $this->transport()->queue()->first(fn(MessageA $m) => $m->fail)->getMessage());
+        $this->assertSame($m3, $this->transport()->queue()->first(static fn(Envelope $e) => $e->getMessage()->fail)->getMessage());
+        $this->assertSame($m3, $this->transport()->queue()->first(static fn($e) => $e->getMessage()->fail)->getMessage());
+        $this->assertSame($m3, $this->transport()->queue()->first(static fn(MessageA $m) => $m->fail)->getMessage());
     }
 
     /**
@@ -412,8 +412,8 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::getContainer()->get(MessageBusInterface::class)->dispatch($m2 = new MessageB());
         self::getContainer()->get(MessageBusInterface::class)->dispatch($m3 = new MessageA());
 
-        $messages = \array_map(fn(TestEnvelope $envelope) => $envelope->getMessage(), $this->transport()->queue()->all());
-        $messagesFromIterator = \array_map(fn(TestEnvelope $envelope) => $envelope->getMessage(), \iterator_to_array($this->transport()->queue()));
+        $messages = \array_map(static fn(TestEnvelope $envelope) => $envelope->getMessage(), $this->transport()->queue()->all());
+        $messagesFromIterator = \array_map(static fn(TestEnvelope $envelope) => $envelope->getMessage(), \iterator_to_array($this->transport()->queue()));
 
         $this->assertSame([$m1, $m2, $m3], $messages);
         $this->assertSame([$m1, $m2, $m3], $messagesFromIterator);
@@ -956,11 +956,11 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::getContainer()->get(MessageBusInterface::class)->dispatch($msgA = new MessageA());
         self::getContainer()->get(MessageBusInterface::class)->dispatch($msgB = new MessageB());
 
-        $messages = \array_map(fn(Envelope $e) => $e->getMessage(), $this->transport()->all());
+        $messages = \array_map(static fn(Envelope $e) => $e->getMessage(), $this->transport()->all());
 
         $this->assertSame([$msgA, $msgB], $messages);
 
-        $messages = \array_map(fn(Envelope $e) => $e->getMessage(), $this->transport()->all(1));
+        $messages = \array_map(static fn(Envelope $e) => $e->getMessage(), $this->transport()->all(1));
 
         $this->assertSame([$msgA], $messages);
 

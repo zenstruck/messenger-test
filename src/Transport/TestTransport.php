@@ -296,7 +296,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     public function all(?int $limit = null): iterable
     {
         return \array_map(
-            fn(TestEnvelope $envelope) => $envelope->envelope,
+            static fn(TestEnvelope $envelope) => $envelope->envelope,
             \array_slice($this->queue()->all(), 0, $limit),
         );
     }
