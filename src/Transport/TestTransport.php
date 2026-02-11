@@ -147,6 +147,20 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         return $this;
     }
 
+    public function enableRetries(): self
+    {
+        self::$disableRetries[$this->name] = false;
+
+        return $this;
+    }
+
+    public function disableRetries(): self
+    {
+        self::$disableRetries[$this->name] = true;
+
+        return $this;
+    }
+
     /**
      * Processes messages on the queue. This is done recursively so if handling
      * a message dispatches more messages, these will be processed as well (up

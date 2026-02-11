@@ -492,6 +492,42 @@ final class InteractsWithMessengerTest extends WebTestCase
     /**
      * @test
      */
+    public function can_manually_enable_retries(): void
+    {
+        self::bootKernel();
+
+        $this->assertTrue($this->transport()->isRetriesDisabled());
+
+        $this->transport()->enableRetries();
+
+        $this->assertFalse($this->transport()->isRetriesDisabled());
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->transport()->process(1)->queue()->assertCount(1);
+    }
+
+    /**
+     * @test
+     */
+    public function can_manually_disable_retries(): void
+    {
+        self::bootKernel(['environment' => 'multi_transport']);
+
+        $this->assertFalse($this->transport('async4')->isRetriesDisabled());
+
+        $this->transport('async4')->disableRetries();
+
+        $this->assertTrue($this->transport('async4')->isRetriesDisabled());
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->transport('async4')->process()->queue()->assertEmpty();
+    }
+
+    /**
+     * @test
+     */
     public function can_disable_exception_catching_in_transport_config(): void
     {
         self::bootKernel(['environment' => 'multi_transport']);
