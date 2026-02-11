@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v1.14.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.14.0)
+
+February 11th, 2026 - [v1.13.0...v1.14.0](https://github.com/zenstruck/messenger-test/compare/v1.13.0...v1.14.0)
+
+* 842948e feat: allow enabling / disabling retries manually (#101) by @tunterreitmeier
+
 ## [v1.13.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.13.0)
 
 December 6th, 2025 - [v1.12.0...v1.13.0](https://github.com/zenstruck/messenger-test/compare/v1.12.0...v1.13.0)
