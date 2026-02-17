@@ -392,8 +392,8 @@ services:
 
 // Let's say somewhere in your app, you register some actions that should occur in the future:
 
-$bus->dispatch(new Enevelope(new TakeSomeAction1(), [DelayStamp::delayFor(new \DateInterval('P1D'))])); // will be handled in 1 day
-$bus->dispatch(new Enevelope(new TakeSomeAction2(), [DelayStamp::delayFor(new \DateInterval('P3D'))])); // will be handled in 3 days
+$bus->dispatch(new Envelope(new TakeSomeAction1(), [DelayStamp::delayFor(new \DateInterval('P1D'))])); // will be handled in 1 day
+$bus->dispatch(new Envelope(new TakeSomeAction2(), [DelayStamp::delayFor(new \DateInterval('P3D'))])); // will be handled in 3 days
 
 // In your test, you can check that the action is not yet performed:
 
