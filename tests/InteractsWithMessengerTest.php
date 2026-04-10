@@ -1015,6 +1015,106 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->find(1);
     }
 
+    /**
+     * @test
+     */
+    public function message_send_to_failure_transport_on_fail(): void
+    {
+        self::bootKernel(['environment' => 'failure_transport']);
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+        $this->transport('async')->process(1)->rejected()->assertContains(MessageA::class, 1);
+        $this->transport('failed')->queue()->assertCount(1)->assertContains(MessageA::class, 1);
+    }
+
+
+    /**
+     * @test
+     */
+    public function message_send_to_failure_transport_on_fail_with_retry_enabled(): void
+    {
+        $clock = self::mockTime();
+        self::bootKernel(['environment' => 'failure_transport']);
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+        $async = $this->transport('async')->enableRetries();
+        $async->process()->rejected()->assertContains(MessageA::class, 1);
+        $clock->sleep(2);
+        $async->process()->rejected()->assertContains(MessageA::class, 2);
+        $clock->sleep(3);
+        $async->process()->rejected()->assertContains(MessageA::class, 3);
+        $clock->sleep(5);
+        $async->process()->rejected()->assertContains(MessageA::class, 4);
+        $this->transport('failed')->queue()->assertCount(1)->assertContains(MessageA::class, 1);
+    }
+
+    /**
+     * @test
+     */
+    public function message_send_to_global_failure_transport_on_fail(): void
+    {
+        self::bootKernel(['environment' => 'global_failure_transport']);
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+        $this->transport('async')->process()->rejected()->assertContains(MessageA::class, 1);
+        $this->transport('failed')->queue()->assertCount(1)->assertContains(MessageA::class, 1);
+    }
+
+
+    /**
+     * @test
+     */
+    public function message_send_to_global_failure_transport_on_fail_with_retry_enabled(): void
+    {
+        $clock = self::mockTime();
+        self::bootKernel(['environment' => 'global_failure_transport']);
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+        $async = $this->transport('async')->enableRetries();
+        $async->process()->rejected()->assertContains(MessageA::class, 1);
+        $clock->sleep(2);
+        $async->process()->rejected()->assertContains(MessageA::class, 2);
+        $clock->sleep(3);
+        $async->process()->rejected()->assertContains(MessageA::class, 3);
+        $clock->sleep(5);
+        $async->process()->rejected()->assertContains(MessageA::class, 4);
+        $this->transport('failed')->queue()->assertContains(MessageA::class, 1);
+    }
+
+    /**
+     * @test
+     */
+    public function message_send_to_global_failure_transport_process(): void
+    {
+        self::bootKernel(['environment' => 'global_failure_transport']);
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+        $this->transport('async')->process()->rejected()->assertContains(MessageA::class, 1);
+        $this->transport('failed')->process()->rejected()->assertContains(MessageA::class, 1);
+    }
+
+
+    /**
+     * @test
+     */
+    public function message_send_to_global_failure_transport_process_with_retry_enabled(): void
+    {
+        $clock = self::mockTime();
+        self::bootKernel(['environment' => 'global_failure_transport']);
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+        $async = $this->transport('async')->enableRetries();
+        $async->process()->rejected()->assertContains(MessageA::class, 1);
+        $clock->sleep(2);
+        $async->process()->rejected()->assertContains(MessageA::class, 2);
+        $clock->sleep(3);
+        $async->process()->rejected()->assertContains(MessageA::class, 3);
+        $clock->sleep(5);
+        $async->process()->rejected()->assertContains(MessageA::class, 4);
+        $failed = $this->transport('failed')->enableRetries();
+        $failed->process()->rejected()->assertContains(MessageA::class, 1);
+        $clock->sleep(2);
+        $failed->process()->rejected()->assertContains(MessageA::class, 2);
+        $clock->sleep(3);
+        $failed->process()->rejected()->assertContains(MessageA::class, 3);
+        $clock->sleep(5);
+        $failed->process()->rejected()->assertContains(MessageA::class/*, 4*/);
+    }
+
     protected static function bootKernel(array $options = []): KernelInterface // @phpstan-ignore-line
     {
         return parent::bootKernel(\array_merge(['environment' => 'single_transport'], $options));

@@ -1,0 +1,13 @@
+imports:
+    - { resource: test.yaml }
+
+framework:
+    messenger:
+        failure_transport: failed
+        transports:
+            async:
+                dsn: test://?support_delay_stamp=true
+            failed:
+                dsn: test://?support_delay_stamp=true
+        routing:
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: [async]

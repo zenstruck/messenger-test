@@ -16,10 +16,12 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerRunningEvent;
+use Symfony\Component\Messenger\EventListener\SendFailedMessageToFailureTransportListener;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
+use Symfony\Component\Messenger\Stamp\SentToFailureTransportStamp;
 use Symfony\Component\Messenger\Transport\Receiver\ListableReceiverInterface;
 use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
@@ -175,6 +177,22 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         // keep track of added listeners/subscribers so we can remove after
         $listeners = [];
         $subscribers = [];
+        // Keep track to SendFailedMessageToFailureTransportListener before replace it
+        $failureListener = null;
+        $failurePriority = 0;
+
+        foreach ($this->dispatcher->getListeners(WorkerMessageFailedEvent::class) as $listener) {
+            // skip Closure
+            if (!is_array($listener)) {
+                continue;
+            }
+            if (is_callable($listener) && $listener[0] instanceof SendFailedMessageToFailureTransportListener) {
+                $failureListener = $listener;
+                $failurePriority = $this->dispatcher->getListenerPriority(WorkerMessageFailedEvent::class, $failureListener) ?? 0;
+                $this->dispatcher->removeListener(WorkerMessageFailedEvent::class, $failureListener);
+                break;
+            }
+        }
 
         $this->dispatcher->addListener(
             WorkerRunningEvent::class,
@@ -198,9 +216,23 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         if (!$this->isCatchingExceptions()) {
             $this->dispatcher->addListener(
                 WorkerMessageFailedEvent::class,
-                $listeners[WorkerMessageFailedEvent::class] = static function(WorkerMessageFailedEvent $event) {
+                $listeners[WorkerMessageFailedEvent::class][] = static function(WorkerMessageFailedEvent $event) {
                     throw $event->getThrowable();
                 },
+            );
+        }
+
+        if (null !== $failureListener) {
+            $isRetriesDisabled = $this->isRetriesDisabled();
+            $this->dispatcher->addListener(
+                WorkerMessageFailedEvent::class,
+                $listeners[WorkerMessageFailedEvent::class][] = static function(WorkerMessageFailedEvent $event) use ($isRetriesDisabled, $failureListener) {
+                    if ($isRetriesDisabled && $event->willRetry()) {
+                        $event = new WorkerMessageFailedEvent($event->getEnvelope(), $event->getReceiverName(), $event->getThrowable());
+                    }
+                    call_user_func($failureListener, $event);
+                },
+                $failurePriority
             );
         }
 
@@ -209,11 +241,21 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
 
         // remove added listeners/subscribers
         foreach ($listeners as $event => $listener) {
+            if (is_array($listener)) {
+                foreach ($listener as $subListener) {
+                    $this->dispatcher->removeListener($event, $subListener);
+                }
+                continue;
+            }
             $this->dispatcher->removeListener($event, $listener);
         }
 
         foreach ($subscribers as $subscriber) {
             $this->dispatcher->removeSubscriber($subscriber);
+        }
+
+        if (null !== $failureListener) {
+            $this->dispatcher->addListener(WorkerMessageFailedEvent::class, $failureListener, $failurePriority);
         }
 
         if ($number > 0) {
@@ -345,10 +387,14 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             $envelope = $envelope->with(AvailableAtStamp::fromDelayStamp($delayStamp, $this->clock->now()));
         }
 
-        if ($this->isRetriesDisabled() && $envelope->last(RedeliveryStamp::class)) {
-            // message is being retried, don't process
+        $lastOriginalReceiver = $envelope->last(SentToFailureTransportStamp::class)?->getOriginalReceiverName();
+        if ($this->isRetriesDisabled() && $envelope->last(RedeliveryStamp::class) && (null === $lastOriginalReceiver || $this->name === $lastOriginalReceiver)) {
+            // message is being retried or emitted for failure by the same transport instance, don't process
             return $envelope;
         }
+
+        // remove for failure_transport processing capability without retry
+        $envelope = $envelope->withoutAll(SentToFailureTransportStamp::class);
 
         if ($this->shouldTestSerialization()) {
             Assert::try(
