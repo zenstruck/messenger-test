@@ -917,6 +917,22 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->find(1);
     }
 
+    /**
+     * @test
+     */
+    public function transport_operations_do_not_count_as_phpunit_assertions(): void
+    {
+        $this->expectNotToPerformAssertions();
+
+        self::bootKernel();
+
+        $this->transport()->send(new Envelope(new MessageA()));
+        $this->transport()->process(1);
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+        $this->transport()->processOrFail();
+    }
+
     protected static function bootKernel(array $options = []): KernelInterface // @phpstan-ignore-line
     {
         return parent::bootKernel(\array_merge(['environment' => 'single_transport'], $options));

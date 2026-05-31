@@ -25,6 +25,7 @@ use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
+use Throwable;
 use Zenstruck\Assert;
 use Zenstruck\Messenger\Test\Stamp\AvailableAtStamp;
 use Zenstruck\Messenger\Test\TestEnvelope;
@@ -216,8 +217,8 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             $this->dispatcher->removeSubscriber($subscriber);
         }
 
-        if ($number > 0) {
-            Assert::that($processCount)->is($number, 'Expected to process {expected} messages but only processed {actual}.');
+        if ($number > 0 && $processCount !== $number) {
+            Assert::fail('Expected to process {expected} messages but only processed {actual}.', ['expected' => $number, 'actual' => $processCount]);
         }
 
         return $this;
@@ -228,7 +229,9 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     public function processOrFail(int $number = -1): self
     {
-        Assert::true($this->hasMessagesToProcess(), 'No messages to process.');
+        if (!$this->hasMessagesToProcess()) {
+            Assert::fail('No messages to process.');
+        }
 
         return $this->process($number);
     }
@@ -355,10 +358,11 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         }
 
         if ($this->shouldTestSerialization()) {
-            Assert::try(
-                fn() => $this->serializer->decode($this->serializer->encode($envelope)),
-                'A problem occurred in the serialization process.',
-            );
+            try {
+                $this->serializer->decode($this->serializer->encode($envelope));
+            } catch (Throwable $e) {
+                Assert::fail('A problem occurred in the serialization process.', ['exception' => $e, 'message' => $e->getMessage()]);
+            }
         }
 
         $this->collectMessage(self::$dispatched, $envelope);
