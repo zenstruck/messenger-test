@@ -944,6 +944,122 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->processOrFail();
     }
 
+    #[Test]
+    public function can_process_specific_message_by_class_via_transport(): void
+    {
+        self::bootKernel();
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageB());
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        $this->transport()->process(MessageB::class);
+
+        $this->transport()->queue()->assertContains(MessageA::class, 2);
+        $this->transport()->queue()->assertNotContains(MessageB::class);
+        $this->assertCount(1, self::getContainer()->get(MessageBHandler::class)->messages);
+    }
+
+    #[Test]
+    public function can_process_specific_message_by_callable_via_transport(): void
+    {
+        self::bootKernel();
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageB(true));
+
+        $this->transport()->process(static fn(MessageB $m) => $m->fail);
+
+        $this->transport()->queue()->assertContains(MessageA::class, 1);
+        $this->transport()->rejected()->assertCount(1);
+    }
+
+    #[Test]
+    public function processing_a_specific_message_honors_its_delay(): void
+    {
+        $clock = self::mockTime();
+        self::bootKernel();
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageB(), [new DelayStamp(10_000)]);
+
+        Assert::that(fn() => $this->transport()->process(MessageB::class))
+            ->throws(AssertionFailedError::class, 'Expected to process a message matching the given filter, but none was found on the queue.')
+        ;
+
+        $this->transport()->queue()->assertCount(1);
+        $this->assertEmpty(self::getContainer()->get(MessageBHandler::class)->messages);
+
+        $clock->sleep(10);
+        $this->transport()->process(MessageB::class);
+
+        $this->transport()->queue()->assertEmpty();
+    }
+
+    #[Test]
+    public function processing_a_specific_message_fails_when_nothing_matches(): void
+    {
+        self::bootKernel();
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        Assert::that(fn() => $this->transport()->process(MessageB::class))
+            ->throws(AssertionFailedError::class, 'Expected to process a message matching the given filter, but none was found on the queue.')
+        ;
+
+        $this->transport()->queue()->assertCount(1);
+    }
+
+    #[Test]
+    public function processing_a_specific_message_does_not_process_its_dispatched_messages(): void
+    {
+        self::bootKernel();
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageD());
+
+        $this->transport()->process(MessageD::class);
+
+        $this->transport()->queue()->assertCount(1);
+        $this->transport()->queue()->assertContains(MessageE::class, 1);
+        $this->transport()->queue()->assertNotContains(MessageF::class);
+    }
+
+    #[Test]
+    public function processing_a_specific_message_processes_the_first_match_when_several_match(): void
+    {
+        self::bootKernel();
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->transport()->process(MessageA::class);
+
+        $this->transport()->rejected()->assertEmpty();
+
+        $this->transport()->queue()->assertContains(MessageA::class, 1);
+    }
+
+    #[Test]
+    public function throwing_exceptions_during_specific_process_propagates_and_keeps_other_messages(): void
+    {
+        self::bootKernel();
+
+        $this->transport()->throwExceptions();
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageB());
+
+        Assert::that(fn() => $this->transport()->process(static fn(MessageA $m) => $m->fail))
+            ->throws(\RuntimeException::class, 'handling failed...')
+        ;
+
+        $this->transport()->queue()->assertContains(MessageA::class, 1);
+        $this->transport()->queue()->assertContains(MessageB::class, 1);
+
+        $this->transport()->process(1);
+        $this->assertCount(1, self::getContainer()->get(MessageAHandler::class)->messages);
+    }
+
     protected static function bootKernel(array $options = []): KernelInterface // @phpstan-ignore-line
     {
         return parent::bootKernel(\array_merge(['environment' => 'single_transport'], $options));

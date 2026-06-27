@@ -113,6 +113,22 @@ class MyTest extends KernelTestCase // or WebTestCase
 **NOTE:** Calling `process()` not only processes messages on the queue but any
 messages created during the handling of messages (all by default or up to `$number`).
 
+
+### Processing specific messages
+
+You can also process a single specific message by passing a message class or a
+callable filter to `process()`. Only the first matching message is handled; every
+other message stays on the queue untouched. This is handy when several messages are
+queued but your test only cares about one of them:
+
+```php
+// process the first "SendWelcomeEmail" message, leave the rest on the queue
+$this->transport()->process(SendWelcomeEmail::class);
+
+// or filter with a callable (type-hint the message to narrow it down)
+$this->transport()->process(fn(SendEmail $message) => $message->isUrgent());
+```
+
 ### Other Transport Assertions and Helpers
 
 ```php
