@@ -16,7 +16,7 @@ use Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface;
 
 class RandomReceiver implements ReceiverInterface
 {
-    public function get(): iterable
+    public function get(int $fetchSize = 1): iterable
     {
         yield;
     }

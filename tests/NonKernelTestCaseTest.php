@@ -11,6 +11,7 @@
 
 namespace Zenstruck\Messenger\Test\Tests;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Zenstruck\Messenger\Test\InteractsWithMessenger;
 
@@ -21,9 +22,7 @@ final class NonKernelTestCaseTest extends TestCase
 {
     use InteractsWithMessenger;
 
-    /**
-     * @test
-     */
+    #[Test]
     public function must_extend_kernel_test_case_for_transport(): void
     {
         $this->expectException(\LogicException::class);
@@ -32,9 +31,7 @@ final class NonKernelTestCaseTest extends TestCase
         $this->transport();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function must_extend_kernel_test_case_for_bus(): void
     {
         $this->expectException(\LogicException::class);

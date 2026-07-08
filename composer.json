@@ -20,16 +20,19 @@
     },
     "require-dev": {
         "phpstan/phpstan": "^2.1",
-        "phpunit/phpunit": "^9.6.0",
+        "phpunit/phpunit": "^11.5|^12|^13",
         "symfony/browser-kit": "^6.4|^7.0|^8.0",
         "symfony/clock": "^6.4|^7.0|^8.0",
-        "symfony/phpunit-bridge": "^6.4|^7.0|^8.0",
+        "symfony/runtime": "^6.4|^7.0|^8.0",
         "symfony/yaml": "^6.4|^7.0|^8.0"
     },
     "suggest": {
         "symfony/clock": "A PSR-20 clock implementation in order to support DelayStamp."
     },
     "config": {
+        "allow-plugins": {
+            "symfony/runtime": false
+        },
         "preferred-install": "dist",
         "sort-packages": true
     },

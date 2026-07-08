@@ -11,6 +11,7 @@
 
 namespace Zenstruck\Messenger\Test\Tests\Bus;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -19,9 +20,7 @@ use Zenstruck\Messenger\Test\Bus\TestBus;
 
 class TestBusTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function collect_messages_by_default(): void
     {
         $bus = new TestBus('bus', $mock = $this->createMock(MessageBusInterface::class));
@@ -37,27 +36,23 @@ class TestBusTest extends TestCase
         $bus->dispatched()->assertContains(\stdClass::class, 1);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function collect_messages_when_enabled(): void
     {
         $bus = new TestBus('bus', $testableBus = new TestableBus());
 
-        $bus->dispatch(new \stdClass(), [$this->createMock(StampInterface::class)]);
+        $bus->dispatch(new \stdClass(), [$this->createStub(StampInterface::class)]);
         TestBus::disableMessagesCollection();
-        $bus->dispatch(new \stdClass(), [$this->createMock(StampInterface::class)]);
+        $bus->dispatch(new \stdClass(), [$this->createStub(StampInterface::class)]);
 
         $bus->dispatched()->assertCount(1);
         self::assertCount(2, $testableBus->envelopes);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function reset_messages(): void
     {
-        $bus = new TestBus('bus', $mock = $this->createMock(MessageBusInterface::class));
+        $bus = new TestBus('bus', $mock = $this->createStub(MessageBusInterface::class));
         $mock->method('dispatch')->willReturn(new Envelope(new \stdClass()));
 
         $bus->dispatch(new \stdClass());

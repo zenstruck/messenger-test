@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<files version="1">
+    <file path="vendor/symfony/deprecation-contracts/function.php">
+        <line number="25" hash="c6af5d66288d0667e424978000f29571e4954b81">
+            <issue><![CDATA[Since symfony/framework-bundle 6.4: Not setting the "framework.php_errors.log" config option is deprecated. It will default to "true" in 7.0.]]></issue>
+            <issue><![CDATA[Since 6.4 symfony/messenger: The "messenger.listener.stop_worker_signals_listener" service is deprecated, use the "Symfony\Component\Console\Command\SignalableCommandInterface" instead.]]></issue>
+        </line>
+    </file>
+    <file path="vendor/symfony/error-handler/DebugClassLoader.php">
+        <line number="391" hash="fa7c41d0a475fe381404d497814e227243716c10">
+            <issue>
+                <![CDATA[The "Zenstruck\Messenger\Test\Transport\TestTransport::get()" method will require a new "int $fetchSize" argument in the next major version of its interface "Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface", not defining it is deprecated.]]></issue>
+        </line>
+    </file>
+</files>

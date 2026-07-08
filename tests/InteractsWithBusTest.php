@@ -11,6 +11,7 @@
 
 namespace Zenstruck\Messenger\Test\Tests;
 
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -23,9 +24,7 @@ class InteractsWithBusTest extends WebTestCase
 {
     use InteractsWithMessenger;
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_interact_with_buses()
     {
         self::bootKernel();
@@ -37,9 +36,7 @@ class InteractsWithBusTest extends WebTestCase
         ;
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function use_default_sync_transport()
     {
         self::bootKernel(['environment' => 'default_sync_transport']);
@@ -51,9 +48,7 @@ class InteractsWithBusTest extends WebTestCase
         ;
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function interacts_with_specified_bus(): void
     {
         self::bootKernel(['environment' => 'multi_bus']);
