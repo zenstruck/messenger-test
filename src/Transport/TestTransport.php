@@ -16,10 +16,10 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerRunningEvent;
+use Symfony\Component\Messenger\EventListener\SendFailedMessageForRetryListener;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
-use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
 use Symfony\Component\Messenger\Transport\Receiver\ListableReceiverInterface;
 use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
@@ -176,6 +176,18 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         $listeners = [];
         $subscribers = [];
 
+        // When retries are disabled, prevent Symfony's retry listener from running: otherwise it
+        // flags the failed message for retry (WorkerMessageFailedEvent::willRetry()), which suppresses
+        // the failure transport. Removing it lets the message be routed to the failure transport (if
+        // any) exactly as it would in a real setup without a retry strategy. Restored in the finally.
+        $retryListener = $this->isRetriesDisabled() ? $this->findRetryListener() : null;
+        $retryListenerPriority = 0;
+
+        if (null !== $retryListener) {
+            $retryListenerPriority = $this->dispatcher->getListenerPriority(WorkerMessageFailedEvent::class, $retryListener) ?? 0;
+            $this->dispatcher->removeListener(WorkerMessageFailedEvent::class, $retryListener);
+        }
+
         $this->dispatcher->addListener(
             WorkerRunningEvent::class,
             $listeners[WorkerRunningEvent::class] = static function(WorkerRunningEvent $event) use (&$processCount) {
@@ -204,16 +216,23 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             );
         }
 
-        $worker = new Worker([$this->name => $this], $this->bus, $this->dispatcher);
-        $worker->run(['sleep' => 0]);
+        try {
+            $worker = new Worker([$this->name => $this], $this->bus, $this->dispatcher);
+            $worker->run(['sleep' => 0]);
+        } finally {
+            // remove added listeners/subscribers
+            foreach ($listeners as $event => $listener) {
+                $this->dispatcher->removeListener($event, $listener);
+            }
 
-        // remove added listeners/subscribers
-        foreach ($listeners as $event => $listener) {
-            $this->dispatcher->removeListener($event, $listener);
-        }
+            foreach ($subscribers as $subscriber) {
+                $this->dispatcher->removeSubscriber($subscriber);
+            }
 
-        foreach ($subscribers as $subscriber) {
-            $this->dispatcher->removeSubscriber($subscriber);
+            // restore the retry listener removed above, if any
+            if (null !== $retryListener) {
+                $this->dispatcher->addListener(WorkerMessageFailedEvent::class, $retryListener, $retryListenerPriority);
+            }
         }
 
         if ($number > 0) {
@@ -345,11 +364,6 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             $envelope = $envelope->with(AvailableAtStamp::fromDelayStamp($delayStamp, $this->clock->now()));
         }
 
-        if ($this->isRetriesDisabled() && $envelope->last(RedeliveryStamp::class)) {
-            // message is being retried, don't process
-            return $envelope;
-        }
-
         if ($this->shouldTestSerialization()) {
             Assert::try(
                 fn() => $this->serializer->decode($this->serializer->encode($envelope)),
@@ -466,5 +480,20 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     private function hasMessagesToProcess(): bool
     {
         return !empty(self::$queue[$this->name] ?? []);
+    }
+
+    /**
+     * Finds Symfony's retry listener (registered as a [listener, method] callable) among the
+     * {@see WorkerMessageFailedEvent} listeners, or null if it is not registered.
+     */
+    private function findRetryListener(): ?callable
+    {
+        foreach ($this->dispatcher->getListeners(WorkerMessageFailedEvent::class) as $listener) {
+            if (\is_array($listener) && ($listener[0] ?? null) instanceof SendFailedMessageForRetryListener) {
+                return $listener;
+            }
+        }
+
+        return null;
     }
 }
