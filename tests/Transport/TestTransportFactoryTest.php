@@ -13,6 +13,11 @@ declare(strict_types=1);
 
 namespace Zenstruck\Messenger\Test\Tests\Transport;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversMethod;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Clock\ClockInterface;
@@ -22,7 +27,6 @@ use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Zenstruck\Messenger\Test\Transport\TestTransport;
 use Zenstruck\Messenger\Test\Transport\TestTransportFactory;
 
-/** @covers \Zenstruck\Messenger\Test\Transport\TestTransportFactory */
 final class TestTransportFactoryTest extends TestCase
 {
     private Stub&MessageBusInterface $bus;
@@ -42,19 +46,11 @@ final class TestTransportFactoryTest extends TestCase
     }
 
     /**
-     * @dataProvider provideCreateTransportCases
-     *
      * @param array<string, bool> $options
      * @param array<string, bool> $expectedOptions
-     *
-     * @covers \Zenstruck\Messenger\Test\Transport\TestTransport::isIntercepting()
-     * @covers \Zenstruck\Messenger\Test\Transport\TestTransport::isCatchingExceptions()
-     * @covers \Zenstruck\Messenger\Test\Transport\TestTransport::shouldTestSerialization()
-     * @covers \Zenstruck\Messenger\Test\Transport\TestTransport::isRetriesDisabled()
-     * @covers \Zenstruck\Messenger\Test\Transport\TestTransport::supportsDelayStamp()
-     *
-     * @test
      */
+    #[Test]
+    #[DataProvider('provideCreateTransportCases')]
     public function create_transport(string $dsn, array $options, array $expectedOptions): void
     {
         $factory = new TestTransportFactory(
@@ -111,12 +107,9 @@ final class TestTransportFactoryTest extends TestCase
         ] + $defaults];
     }
 
-    /**
-     * @testWith ["test://", true]
-     *           ["another-test://", false]
-     *
-     * @test
-     */
+    #[Test]
+    #[TestWith(['test://', true])]
+    #[TestWith(['another-test://', false])]
     public function support(string $dsn, bool $expectedSupport): void
     {
         $factory = new TestTransportFactory(

@@ -11,6 +11,9 @@
 
 namespace Zenstruck\Messenger\Test\Tests;
 
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -29,10 +32,8 @@ final class DelayStampTest extends WebTestCase
     use ClockSensitiveTrait;
     use InteractsWithMessenger;
 
-    /**
-     * @test
-     * @group legacy
-     */
+    #[Test]
+    #[IgnoreDeprecations]
     public function it_handles_messages_sequentially_without_delay_stamp_support(): void
     {
         self::bootKernel(['environment' => 'delay_stamp_disabled']);
@@ -49,9 +50,7 @@ final class DelayStampTest extends WebTestCase
         $transport->process(1)->acknowledged()->assertCount(3)->assertContains(MessageC::class);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_only_handles_message_without_delay_stamp_if_clock_not_mocked(): void
     {
         $transport = $this->transport('async');
@@ -65,9 +64,7 @@ final class DelayStampTest extends WebTestCase
         $transport->process()->acknowledged()->assertCount(1);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_messages_depending_on_delay_stamp(): void
     {
         $clock = self::mockTime();
@@ -88,9 +85,7 @@ final class DelayStampTest extends WebTestCase
         $transport->process()->acknowledged()->assertCount(3)->assertContains(MessageA::class);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_handles_directly_messages_with_negative_delay_stamp(): void
     {
         $clock = self::mockTime();

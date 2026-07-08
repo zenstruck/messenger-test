@@ -11,6 +11,7 @@
 
 namespace Zenstruck\Messenger\Test\Tests\TransportsAreResetCorrectly;
 
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -31,9 +32,7 @@ class NotInteractsWithMessengerBeforeTest extends KernelTestCase
         TestTransport::enableMessagesCollection();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_dispatches_a_message(): void
     {
         /** @var TestTransportRegistry $registry */

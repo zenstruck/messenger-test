@@ -12,6 +12,9 @@
 namespace Zenstruck\Messenger\Test\Tests;
 
 use PHPUnit\Framework\AssertionFailedError;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -47,10 +50,8 @@ final class InteractsWithMessengerTest extends WebTestCase
     use ClockSensitiveTrait;
     use InteractsWithMessenger;
 
-    /**
-     * @test
-     * @group legacy
-     */
+    #[Test]
+    #[IgnoreDeprecations]
     public function messenger_is_deprecated(): void
     {
         self::bootKernel();
@@ -59,9 +60,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertInstanceOf(TestTransport::class, $transport);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function ignore_receiver_detached_from_transport(): void
     {
         self::bootKernel(['environment' => 'with_receiver_detached']);
@@ -70,9 +69,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertInstanceOf(TestTransport::class, $transport);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_interact_with_queue(): void
     {
         self::bootKernel();
@@ -112,9 +109,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertCount(1, self::getContainer()->get(MessageBHandler::class)->messages);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_use_envelope_collection_back(): void
     {
         self::bootKernel();
@@ -147,9 +142,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->bus()->dispatched()->assertCount(1);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_disable_intercept(): void
     {
         self::bootKernel();
@@ -176,9 +169,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertCount(1, self::getContainer()->get(MessageBHandler::class)->messages);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function disabling_intercept_with_items_on_queue_processes_all(): void
     {
         self::bootKernel();
@@ -196,9 +187,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertCount(1, self::getContainer()->get(MessageBHandler::class)->messages);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function unblocking_processes_existing_messages_on_queue(): void
     {
         self::bootKernel();
@@ -215,9 +204,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->acknowledged()->assertCount(2);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_access_envelope_collection_items_via_first(): void
     {
         self::bootKernel();
@@ -235,9 +222,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertSame($m3, $this->transport()->queue()->first(static fn(MessageA $m) => $m->fail)->getMessage());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function envelope_collection_first_throws_exception_if_no_match(): void
     {
         self::bootKernel();
@@ -247,9 +232,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->queue()->first();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_make_stamp_assertions_on_test_envelope(): void
     {
         self::bootKernel();
@@ -265,9 +248,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         ;
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function cannot_access_queue_if_none_registered(): void
     {
         self::bootKernel(['environment' => 'test']);
@@ -278,17 +259,13 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function accessing_transport_boots_kernel_if_not_yet_booted(): void
     {
         $this->transport()->queue()->assertEmpty();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_interact_with_multiple_queues(): void
     {
         self::bootKernel(['environment' => 'multi_transport']);
@@ -328,9 +305,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertCount(1, self::getContainer()->get(MessageBHandler::class)->messages);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_enable_intercept(): void
     {
         self::bootKernel(['environment' => 'multi_transport']);
@@ -346,9 +321,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport('async2')->queue()->assertCount(2);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function cannot_access_queue_that_does_not_exist(): void
     {
         self::bootKernel(['environment' => 'multi_transport']);
@@ -359,9 +332,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport('invalid');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function cannot_access_queue_that_is_not_test_transport(): void
     {
         self::bootKernel(['environment' => 'multi_transport']);
@@ -372,9 +343,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport('async3');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function queue_name_is_required_if_using_multiple_transports(): void
     {
         self::bootKernel(['environment' => 'multi_transport']);
@@ -385,9 +354,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_access_message_objects_on_queue(): void
     {
         self::bootKernel();
@@ -401,9 +368,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertSame([$m2], $this->transport()->queue()->messages(MessageB::class));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_access_envelopes_on_envelope_collection(): void
     {
         self::bootKernel();
@@ -419,9 +384,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertSame([$m1, $m2, $m3], $messagesFromIterator);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_access_sent_acknowledged_and_rejected(): void
     {
         self::bootKernel();
@@ -442,9 +405,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertCount(1, $this->transport()->rejected());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function cannot_access_queue_if_bundle_not_enabled(): void
     {
         self::$class = NoBundleKernel::class;
@@ -457,9 +418,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_configure_throwing_exceptions(): void
     {
         self::bootKernel();
@@ -474,9 +433,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->process();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_configure_throwing_exceptions_with_intercept_disabled(): void
     {
         self::bootKernel();
@@ -489,9 +446,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_manually_enable_retries(): void
     {
         self::bootKernel();
@@ -507,9 +462,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->process(1)->queue()->assertCount(1);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_manually_disable_retries(): void
     {
         self::bootKernel(['environment' => 'multi_transport']);
@@ -525,9 +478,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport('async4')->process()->queue()->assertEmpty();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_disable_exception_catching_in_transport_config(): void
     {
         self::bootKernel(['environment' => 'multi_transport']);
@@ -538,9 +489,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageB(true));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_re_enable_exception_catching_if_disabled_in_transport_config(): void
     {
         self::bootKernel(['environment' => 'multi_transport']);
@@ -554,9 +503,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport('async2')->rejected()->assertCount(1);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function transport_data_is_persisted_between_requests_and_kernel_shutdown(): void
     {
         self::bootKernel();
@@ -600,9 +547,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->rejected()->assertCount(1);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_reset_transport_data(): void
     {
         self::bootKernel();
@@ -616,9 +561,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->queue()->assertEmpty();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function disabling_intercept_is_remembered_between_kernel_reboots(): void
     {
         self::bootKernel();
@@ -639,9 +582,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->dispatched()->assertCount(2);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function throwing_exceptions_is_remembered_between_kernel_reboots(): void
     {
         self::bootKernel();
@@ -659,9 +600,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->process();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_manually_send_envelope_to_transport_and_process(): void
     {
         self::bootKernel();
@@ -680,9 +619,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertCount(1, self::getContainer()->get(MessageAHandler::class)->messages);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_manually_send_message_to_transport_and_process(): void
     {
         self::bootKernel();
@@ -701,9 +638,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertCount(1, self::getContainer()->get(MessageAHandler::class)->messages);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_manually_send_a_serialized_message_to_transport_and_process(): void
     {
         self::bootKernel();
@@ -724,9 +659,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertCount(1, self::getContainer()->get(MessageAHandler::class)->messages);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function process_all_is_recursive(): void
     {
         self::bootKernel();
@@ -746,9 +679,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->acknowledged()->assertContains(MessageF::class, 1);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function process_x_messages_is_recursive(): void
     {
         self::bootKernel();
@@ -773,9 +704,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->acknowledged()->assertContains(MessageF::class, 1);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function process_x_recursive_when_intercept_disabled(): void
     {
         self::bootKernel();
@@ -789,9 +718,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->acknowledged()->assertContains(MessageF::class, 1);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function fails_if_trying_to_process_more_messages_than_can_be_processed(): void
     {
         self::bootKernel();
@@ -805,9 +732,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         });
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function process_or_fail_processes_messages(): void
     {
         self::bootKernel();
@@ -824,9 +749,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->acknowledged()->assertContains(MessageA::class, 1);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function process_or_fail_fails_if_no_messages_on_queue(): void
     {
         self::bootKernel();
@@ -836,9 +759,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         ;
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function envelope_collection_assertions(): void
     {
         self::bootKernel();
@@ -866,9 +787,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         ;
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function messenger_worker_events_are_dispatched_when_processing(): void
     {
         $messages = [];
@@ -890,9 +809,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertEquals($message, $messages[0]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function serialization_problem_assertions(): void
     {
         self::bootKernel(['environment' => 'multi_transport']);
@@ -905,9 +822,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         Assert::run(fn() => $this->transport('async2')->send(new Envelope(new MessageG())));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function serialization_problem_in_handler_assertions(): void
     {
         self::bootKernel(['environment' => 'multi_transport']);
@@ -925,9 +840,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         });
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function can_enable_retries(): void
     {
         $clock = self::mockTime();
@@ -942,10 +855,8 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport('async4')->process(1)->rejected()->assertContains(MessageA::class, 2);
     }
 
-    /**
-     * @test
-     * @group legacy
-     */
+    #[Test]
+    #[IgnoreDeprecations]
     public function can_enable_retries_without_delay_stamp(): void
     {
         self::bootKernel(['environment' => 'delay_stamp_disabled']);
@@ -955,9 +866,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport('async')->process()->rejected()->assertContains(MessageA::class, 2);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function process_empty_queue(): void
     {
         self::bootKernel();
@@ -969,9 +878,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         ;
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function transport_is_message_count_aware(): void
     {
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
@@ -984,9 +891,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertSame(0, $this->transport()->getMessageCount());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function transport_is_listable(): void
     {
         self::getContainer()->get(MessageBusInterface::class)->dispatch($msgA = new MessageA());
@@ -1005,9 +910,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->assertEmpty($this->transport()->all());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function cannot_use_find_on_transport(): void
     {
         $this->expectException(\BadMethodCallException::class);

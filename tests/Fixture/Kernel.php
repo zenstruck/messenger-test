@@ -46,6 +46,20 @@ class Kernel extends BaseKernel
 
     protected function configureContainer(ContainerBuilder $c, LoaderInterface $loader): void
     {
+        $frameworkConfiguration = [
+            'http_method_override' => false,
+            'secret' => 'S3CRET',
+            'router' => ['utf8' => true],
+            'test' => true,
+        ];
+
+        if (\str_starts_with(self::VERSION, '6.4')) {
+            // prevent a deprecation notice in Symfony 6.4
+            $frameworkConfiguration['handle_all_throwables'] = true;
+        }
+
+        $c->loadFromExtension('framework', $frameworkConfiguration);
+
         $loader->load(\sprintf('%s/config/%s.yaml', __DIR__, $this->getEnvironment()));
 
         if (\class_exists(Clock::class) && !$c->has(\Psr\Clock\ClockInterface::class)) {

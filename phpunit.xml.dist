@@ -7,11 +7,12 @@
          bootstrap="tests/bootstrap.php"
          failOnRisky="true"
          failOnWarning="true"
+         failOnDeprecation="true"
+         cacheDirectory=".phpunit.cache"
 >
     <php>
         <ini name="error_reporting" value="-1" />
         <server name="KERNEL_CLASS" value="Zenstruck\Messenger\Test\Tests\Fixture\Kernel" />
-        <server name="SYMFONY_DEPRECATIONS_HELPER" value="max[self]=0&amp;max[direct]=0&amp;quiet[]=indirect&amp;quiet[]=other"/>
         <server name="SHELL_VERBOSITY" value="-1"/>
     </php>
 
@@ -27,13 +28,9 @@
         </testsuite>
     </testsuites>
 
-    <coverage>
+    <source ignoreSuppressionOfDeprecations="true" baseline="phpunit-baseline.xml">
         <include>
             <directory>./src/</directory>
         </include>
-    </coverage>
-
-    <listeners>
-        <listener class="Symfony\Bridge\PhpUnit\SymfonyTestsListener"/>
-    </listeners>
+    </source>
 </phpunit>

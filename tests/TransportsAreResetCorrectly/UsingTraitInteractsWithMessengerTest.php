@@ -11,6 +11,7 @@
 
 namespace Zenstruck\Messenger\Test\Tests\TransportsAreResetCorrectly;
 
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Zenstruck\Messenger\Test\InteractsWithMessenger;
@@ -24,9 +25,7 @@ final class UsingTraitInteractsWithMessengerTest extends KernelTestCase
 {
     use InteractsWithMessenger;
 
-    /**
-     * @test
-     */
+    #[Test]
     public function assert_transports_are_reset_after_a_test_which_does_not_use_trait(): void
     {
         self::bootKernel();
