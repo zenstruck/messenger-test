@@ -19,7 +19,6 @@ use Symfony\Component\Messenger\Event\WorkerRunningEvent;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
-use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
 use Symfony\Component\Messenger\Transport\Receiver\ListableReceiverInterface;
 use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
@@ -204,16 +203,18 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             );
         }
 
-        $worker = new Worker([$this->name => $this], $this->bus, $this->dispatcher);
-        $worker->run(['sleep' => 0]);
+        try {
+            $worker = new Worker([$this->name => $this], $this->bus, $this->dispatcher);
+            $worker->run(['sleep' => 0]);
+        } finally {
+            // remove added listeners/subscribers
+            foreach ($listeners as $event => $listener) {
+                $this->dispatcher->removeListener($event, $listener);
+            }
 
-        // remove added listeners/subscribers
-        foreach ($listeners as $event => $listener) {
-            $this->dispatcher->removeListener($event, $listener);
-        }
-
-        foreach ($subscribers as $subscriber) {
-            $this->dispatcher->removeSubscriber($subscriber);
+            foreach ($subscribers as $subscriber) {
+                $this->dispatcher->removeSubscriber($subscriber);
+            }
         }
 
         if ($number > 0) {
@@ -345,11 +346,6 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             $envelope = $envelope->with(AvailableAtStamp::fromDelayStamp($delayStamp, $this->clock->now()));
         }
 
-        if ($this->isRetriesDisabled() && $envelope->last(RedeliveryStamp::class)) {
-            // message is being retried, don't process
-            return $envelope;
-        }
-
         if ($this->shouldTestSerialization()) {
             Assert::try(
                 fn() => $this->serializer->decode($this->serializer->encode($envelope)),
@@ -417,6 +413,14 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     public function isRetriesDisabled(): bool
     {
         return self::$disableRetries[$this->name] ?? throw new \LogicException(\sprintf('Transport "%s" is not initialized.', $this->name));
+    }
+
+    /**
+     * @internal
+     */
+    public static function isRetriesDisabledFor(string $name): bool
+    {
+        return self::$disableRetries[$name] ?? false;
     }
 
     /**
