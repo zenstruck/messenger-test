@@ -258,7 +258,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     public function get(int $fetchSize = 1): iterable
     {
-        if ($fetchSize !== 1) {
+        if (1 !== $fetchSize) {
             throw new \InvalidArgumentException(\sprintf('"%s()" only supports fetchSize of 1, "%s" given.', __METHOD__, $fetchSize));
         }
 
