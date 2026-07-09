@@ -256,8 +256,12 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     /**
      * @internal
      */
-    public function get(): iterable
+    public function get(int $fetchSize = 1): iterable
     {
+        if ($fetchSize !== 1) {
+            throw new \InvalidArgumentException(\sprintf('"%s()" only supports fetchSize of 1, "%s" given.', __METHOD__, $fetchSize));
+        }
+
         if (!isset(self::$queue[$this->name]) || !self::$queue[$this->name]) {
             return [];
         }
