@@ -6,10 +6,4 @@
             <issue><![CDATA[Since 6.4 symfony/messenger: The "messenger.listener.stop_worker_signals_listener" service is deprecated, use the "Symfony\Component\Console\Command\SignalableCommandInterface" instead.]]></issue>
         </line>
     </file>
-    <file path="vendor/symfony/error-handler/DebugClassLoader.php">
-        <line number="391" hash="fa7c41d0a475fe381404d497814e227243716c10">
-            <issue>
-                <![CDATA[The "Zenstruck\Messenger\Test\Transport\TestTransport::get()" method will require a new "int $fetchSize" argument in the next major version of its interface "Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface", not defining it is deprecated.]]></issue>
-        </line>
-    </file>
 </files>
