@@ -12,6 +12,7 @@
 namespace Zenstruck\Messenger\Test;
 
 use Psr\Clock\ClockInterface;
+use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -21,6 +22,7 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Zenstruck\Messenger\Test\Bus\TestBus;
 use Zenstruck\Messenger\Test\Bus\TestBusRegistry;
+use Zenstruck\Messenger\Test\Retry\DisableableRetryStrategy;
 use Zenstruck\Messenger\Test\Transport\TestTransportFactory;
 use Zenstruck\Messenger\Test\Transport\TestTransportRegistry;
 
@@ -95,5 +97,41 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
                 ->setDecoratedService($id)
             ;
         }
+
+        $this->decorateRetryStrategies($container);
+    }
+
+    /**
+     * Wraps each transport's retry strategy with a {@see DisableableRetryStrategy} so retries can be
+     * toggled at runtime per transport (via TestTransport::enableRetries()/disableRetries()).
+     */
+    private function decorateRetryStrategies(ContainerBuilder $container): void
+    {
+        if (!$container->hasDefinition('messenger.retry_strategy_locator')) {
+            return;
+        }
+
+        $locator = $container->getDefinition('messenger.retry_strategy_locator');
+        $strategies = $locator->getArgument(0);
+
+        if (!\is_array($strategies)) {
+            return;
+        }
+
+        foreach ($strategies as $name => $strategy) {
+            // the locator arguments are plain References at this point (before ServiceLocatorTagPass),
+            // but handle the wrapped form too in case pass ordering ever changes
+            $inner = $strategy instanceof ServiceClosureArgument ? $strategy->getValues()[0] : $strategy;
+
+            $container->register($id = "zenstruck_messenger_test.retry_strategy.{$name}", DisableableRetryStrategy::class)
+                ->setArguments([$inner, $name])
+            ;
+
+            $strategies[$name] = $strategy instanceof ServiceClosureArgument
+                ? new ServiceClosureArgument(new Reference($id))
+                : new Reference($id);
+        }
+
+        $locator->replaceArgument(0, $strategies);
     }
 }
