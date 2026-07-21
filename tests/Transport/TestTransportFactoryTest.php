@@ -16,6 +16,7 @@ namespace Zenstruck\Messenger\Test\Tests\Transport;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversMethod;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\MockObject\Stub;
@@ -50,6 +51,7 @@ final class TestTransportFactoryTest extends TestCase
      * @param array<string, bool> $expectedOptions
      */
     #[Test]
+    #[IgnoreDeprecations]
     #[DataProvider('provideCreateTransportCases')]
     public function create_transport(string $dsn, array $options, array $expectedOptions): void
     {
@@ -69,6 +71,7 @@ final class TestTransportFactoryTest extends TestCase
             'test_serialization' => $transport->shouldTestSerialization(),
             'disable_retries' => $transport->isRetriesDisabled(),
             'support_delay_stamp' => $transport->supportsDelayStamp(),
+            'impacts_assertions_count' => $transport->impactsAssertionsCount(),
         ]);
     }
 
@@ -83,6 +86,7 @@ final class TestTransportFactoryTest extends TestCase
             'test_serialization' => true,
             'disable_retries' => true,
             'support_delay_stamp' => false,
+            'impacts_assertions_count' => true,
         ];
 
         yield 'pass options by dsn only' => ['test://?intercept=false&support_delay_stamp=true', [], [
