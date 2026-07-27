@@ -88,7 +88,7 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
 
     final public function first(callable|string|null $filter = null): TestEnvelope
     {
-        $filter = EnvelopeFilter::normalize($filter ?? static fn() => true);
+        $filter = new EnvelopeFilter($filter ?? static fn() => true);
 
         foreach ($this->envelopes as $envelope) {
             if ($filter($envelope)) {

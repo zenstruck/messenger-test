@@ -18,19 +18,39 @@ use Symfony\Component\Messenger\Envelope;
  */
 final class EnvelopeFilter
 {
+    private \Closure $filter;
+
+    /**
+     * @param string|callable $filter a message class-string, or a callable predicate receiving the Envelope,
+     *                                 the type-hinted message, or no argument
+     */
+    public function __construct(string|callable $filter)
+    {
+        $this->filter = $this->normalize($filter);
+    }
+
+    public function __invoke(Envelope $envelope): bool
+    {
+        return (bool) ($this->filter)($envelope);
+    }
+
     /**
      * @param callable|string $filter a callable predicate, or a message class-string
      *
-     * @return callable(Envelope):bool
+     * @return \Closure(Envelope):bool
      */
-    public static function normalize(callable|string $filter): callable
+    private function normalize(callable|string $filter): \Closure
     {
         if (!\is_callable($filter)) {
             // message class name
             return static fn(Envelope $envelope) => $filter === $envelope->getMessage()::class;
         }
 
-        $function = new \ReflectionFunction($filter(...));
+        if (!$filter instanceof \Closure) {
+            $filter = $filter(...);
+        }
+
+        $function = new \ReflectionFunction($filter);
 
         if (!$parameter = $function->getParameters()[0] ?? null) {
             return $filter;

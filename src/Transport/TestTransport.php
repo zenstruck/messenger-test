@@ -80,9 +80,6 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     /** @var array<string, Envelope[]> */
     private static array $queue = [];
 
-    /** @var array<string, callable(Envelope):bool> */
-    private static array $deliveryFilter = [];
-
     // this setting applies to all transports
     private static bool $enableMessagesCollection = true;
     private static bool $resetOnKernelShutdownEnabled = true;
@@ -189,8 +186,9 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     {
         if (\is_int($numberOrFilter)) {
             $number = $numberOrFilter;
+            $receiver = $this;
         } else {
-            self::$deliveryFilter[$this->name] = EnvelopeFilter::normalize($numberOrFilter);
+            $receiver = new FilteredReceiver($this, new EnvelopeFilter($numberOrFilter));
             $number = 1;
         }
 
@@ -228,7 +226,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             );
         }
 
-        $worker = new Worker([$this->name => $this], $this->bus, $this->dispatcher);
+        $worker = new Worker([$this->name => $receiver], $this->bus, $this->dispatcher);
         $worker->run(['sleep' => 0]);
 
         // remove added listeners/subscribers
@@ -240,10 +238,12 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             $this->dispatcher->removeSubscriber($subscriber);
         }
 
-        unset(self::$deliveryFilter[$this->name]);
-
         if (!\is_int($numberOrFilter)) {
-            Assert::true($processCount > 0, 'Expected to process a message matching the given filter, but none was found on the queue.');
+            if ($this->impactsAssertionsCount()) {
+                Assert::true($processCount > 0, 'Expected to process a message matching the given filter, but none was found on the queue.');
+            } elseif (0 === $processCount) {
+                Assert::fail('Expected to process a message matching the given filter, but none was found on the queue.');
+            }
         } elseif ($number > 0) {
             if ($this->impactsAssertionsCount()) {
                 Assert::that($processCount)->is($number, 'Expected to process {expected} messages but only processed {actual}.');
@@ -298,12 +298,19 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             throw new \InvalidArgumentException(\sprintf('"%s()" only supports fetchSize of 1, "%s" given.', __METHOD__, $fetchSize));
         }
 
+        return $this->getMatching(null);
+    }
+
+    /**
+     * @internal
+     *
+     * @return iterable<Envelope>
+     */
+    public function getMatching(?EnvelopeFilter $filter): iterable
+    {
         if (!isset(self::$queue[$this->name]) || !self::$queue[$this->name]) {
             return [];
         }
-
-        $filter = self::$deliveryFilter[$this->name] ?? null;
-        unset(self::$deliveryFilter[$this->name]);
 
         if (null === $filter && !$this->supportsDelayStamp()) {
             return $this->deliver(\array_shift(self::$queue[$this->name]));
@@ -418,7 +425,6 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     public function reset(): void
     {
         self::$queue[$this->name] = self::$dispatched[$this->name] = self::$acknowledged[$this->name] = self::$rejected[$this->name] = [];
-        unset(self::$deliveryFilter[$this->name]);
     }
 
     /**
@@ -426,7 +432,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     public static function resetAll(): void
     {
-        self::$queue = self::$dispatched = self::$acknowledged = self::$rejected = self::$deliveryFilter = [];
+        self::$queue = self::$dispatched = self::$acknowledged = self::$rejected = [];
         self::initialize();
     }
 
