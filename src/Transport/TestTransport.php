@@ -25,7 +25,6 @@ use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
-use Throwable;
 use Zenstruck\Assert;
 use Zenstruck\Messenger\Test\Stamp\AvailableAtStamp;
 use Zenstruck\Messenger\Test\TestEnvelope;
@@ -381,7 +380,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             } else {
                 try {
                     $this->serializer->decode($this->serializer->encode($envelope));
-                } catch (Throwable $e) {
+                } catch (\Throwable $e) {
                     Assert::fail('A problem occurred in the serialization process.', ['exception' => $e, 'message' => $e->getMessage()]);
                 }
             }
