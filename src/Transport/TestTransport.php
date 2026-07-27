@@ -107,7 +107,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         self::$impactsAssertionsCount[$name] ??= $options['impacts_assertions_count'];
 
         if (self::$impactsAssertionsCount[$name]) {
-            trigger_deprecation('zenstruck/messenger-test', '1.15.0', 'Allowing "TestTransport" to impact PHPUnit\'s assertions count is deprecated and will not be possible in 2.0');
+            trigger_deprecation('zenstruck/messenger-test', '1.15.0', 'Allowing "TestTransport" to impact PHPUnit\'s assertions count is deprecated and will not be possible in 2.0. Set option "impacts_assertions_count" to "false" to prevent it.');
         }
 
         if (!self::$supportDelayStamp[$name]) {

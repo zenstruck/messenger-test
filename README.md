@@ -456,6 +456,27 @@ when@test:
 > [!NOTE]
 > When using retries along with `support_delay_stamp` you must mock the time to sleep between retries.
 
+### Prevent Assertions Count
+
+By default, the `TestTransport` performs assertions internally, which impacts PHPUnit's assertions count.
+This hides risky tests from  the developer (a test doing no explicit assertion is not flagged as risky)
+and prevents using`expectNotToPerformAssertions()` in tests that only interact with the transport.
+
+This behavior is deprecated and can be disabled with the transport dsn:
+
+```yaml
+# config/packages/messenger.yaml
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: test://?impacts_assertions_count=false
+```
+
+> [!NOTE]
+> Setting `impacts_assertions_count` to `false` will become the default behavior in 2.0.
+
 
 ## Bus
 

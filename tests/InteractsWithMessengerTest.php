@@ -917,9 +917,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         $this->transport()->find(1);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function transport_operations_do_not_count_as_phpunit_assertions(): void
     {
         $this->expectNotToPerformAssertions();
