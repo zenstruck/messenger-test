@@ -25,6 +25,7 @@ use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
+use Throwable;
 use Zenstruck\Assert;
 use Zenstruck\Messenger\Test\Stamp\AvailableAtStamp;
 use Zenstruck\Messenger\Test\TestEnvelope;
@@ -40,6 +41,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         'test_serialization' => true,
         'disable_retries' => true,
         'support_delay_stamp' => false,
+        'impacts_assertions_count' => true,
     ];
 
     private string $name;
@@ -62,6 +64,9 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
 
     /** @var array<string, bool> */
     private static array $supportDelayStamp = [];
+
+    /** @var array<string, bool> */
+    private static array $impactsAssertionsCount = [];
 
     /** @var array<string, Envelope[]> */
     private static array $dispatched = [];
@@ -99,6 +104,11 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         self::$testSerialization[$name] ??= $options['test_serialization'];
         self::$disableRetries[$name] ??= $options['disable_retries'];
         self::$supportDelayStamp[$name] ??= $options['support_delay_stamp'];
+        self::$impactsAssertionsCount[$name] ??= $options['impacts_assertions_count'];
+
+        if (self::$impactsAssertionsCount[$name]) {
+            trigger_deprecation('zenstruck/messenger-test', '1.15.0', 'Allowing "TestTransport" to impact PHPUnit\'s assertions count is deprecated and will not be possible in 2.0. Set option "impacts_assertions_count" to "false" to prevent it.');
+        }
 
         if (!self::$supportDelayStamp[$name]) {
             trigger_deprecation('zenstruck/messenger-test', '1.8.0', 'Not supporting DelayStamp is deprecated, support will be removed in 2.0.');
@@ -217,7 +227,11 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         }
 
         if ($number > 0) {
-            Assert::that($processCount)->is($number, 'Expected to process {expected} messages but only processed {actual}.');
+            if ($this->impactsAssertionsCount()) {
+                Assert::that($processCount)->is($number, 'Expected to process {expected} messages but only processed {actual}.');
+            } elseif ($processCount !== $number) {
+                Assert::fail('Expected to process {expected} messages but only processed {actual}.', ['expected' => $number, 'actual' => $processCount]);
+            }
         }
 
         return $this;
@@ -228,7 +242,11 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     public function processOrFail(int $number = -1): self
     {
-        Assert::true($this->hasMessagesToProcess(), 'No messages to process.');
+        if ($this->impactsAssertionsCount()) {
+            Assert::true($this->hasMessagesToProcess(), 'No messages to process.');
+        } elseif (!$this->hasMessagesToProcess()) {
+            Assert::fail('No messages to process.');
+        }
 
         return $this->process($number);
     }
@@ -355,10 +373,18 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         }
 
         if ($this->shouldTestSerialization()) {
-            Assert::try(
-                fn() => $this->serializer->decode($this->serializer->encode($envelope)),
-                'A problem occurred in the serialization process.',
-            );
+            if ($this->impactsAssertionsCount()) {
+                Assert::try(
+                    fn() => $this->serializer->decode($this->serializer->encode($envelope)),
+                    'A problem occurred in the serialization process.',
+                );
+            } else {
+                try {
+                    $this->serializer->decode($this->serializer->encode($envelope));
+                } catch (Throwable $e) {
+                    Assert::fail('A problem occurred in the serialization process.', ['exception' => $e, 'message' => $e->getMessage()]);
+                }
+            }
         }
 
         $this->collectMessage(self::$dispatched, $envelope);
@@ -390,7 +416,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
 
     public static function initialize(): void
     {
-        self::$intercept = self::$catchExceptions = self::$testSerialization = self::$disableRetries = self::$supportDelayStamp = [];
+        self::$intercept = self::$catchExceptions = self::$testSerialization = self::$disableRetries = self::$supportDelayStamp = self::$impactsAssertionsCount = [];
     }
 
     public static function enableMessagesCollection(): void
@@ -421,6 +447,11 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     public function isRetriesDisabled(): bool
     {
         return self::$disableRetries[$this->name] ?? throw new \LogicException(\sprintf('Transport "%s" is not initialized.', $this->name));
+    }
+
+    public function impactsAssertionsCount(): bool
+    {
+        return self::$impactsAssertionsCount[$this->name] ?? throw new \LogicException(\sprintf('Transport "%s" is not initialized.', $this->name));
     }
 
     /**

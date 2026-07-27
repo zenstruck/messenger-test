@@ -5,16 +5,16 @@ framework:
     messenger:
         transports:
             async1:
-                dsn: test://?support_delay_stamp=true
+                dsn: test://?support_delay_stamp=true&impacts_assertions_count=false
             async2:
-                dsn: test://?intercept=false&catch_exceptions=false&test_serialization=false&support_delay_stamp=true
+                dsn: test://?intercept=false&catch_exceptions=false&test_serialization=false&support_delay_stamp=true&impacts_assertions_count=false
             async3: in-memory://
             async4:
-                dsn: test://?disable_retries=false&support_delay_stamp=true
+                dsn: test://?disable_retries=false&support_delay_stamp=true&impacts_assertions_count=false
                 retry_strategy:
                     service: messenger_test_retry_strategy
             async5:
-                dsn: test://?intercept=false&catch_exceptions=false&test_serialization=true&support_delay_stamp=true
+                dsn: test://?intercept=false&catch_exceptions=false&test_serialization=true&support_delay_stamp=true&impacts_assertions_count=false
         routing:
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: [async1, async4]
             Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageB: [async2]

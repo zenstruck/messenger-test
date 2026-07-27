@@ -13,7 +13,7 @@ framework:
     messenger:
         transports:
             async:
-                dsn: test://?disable_retries=false&support_delay_stamp=true
+                dsn: test://?disable_retries=false&support_delay_stamp=true&impacts_assertions_count=false
                 retry_strategy:
                     service: messenger_test_retry_strategy
         routing:
