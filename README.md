@@ -116,17 +116,23 @@ messages created during the handling of messages (all by default or up to `$numb
 
 ### Processing specific messages
 
-You can also process a single specific message by passing a message class or a
-callable filter to `process()`. Only the first matching message is handled; every
-other message stays on the queue untouched. This is handy when several messages are
-queued but your test only cares about one of them:
+You can also process only specific messages by passing a message class or a callable
+filter to `process()` or `processOrFail()`. Only the first matching messages are
+handled; every other message stays on the queue untouched. This is handy when several
+messages are queued but your test only cares about some of them:
 
 ```php
-// process the first "SendWelcomeEmail" message, leave the rest on the queue
-$this->transport()->process(SendWelcomeEmail::class);
+// process all the "SendWelcomeEmail" messages, leave the rest on the queue
+$this->transport()->process(filter: SendWelcomeEmail::class);
+
+// process only the first "SendWelcomeEmail" message
+$this->transport()->process(1, SendWelcomeEmail::class);
 
 // or filter with a callable (type-hint the message to narrow it down)
-$this->transport()->process(fn(SendEmail $message) => $message->isUrgent());
+$this->transport()->process(filter: fn(SendEmail $message) => $message->isUrgent());
+
+// equivalent to above but fails if no message matches the filter
+$this->transport()->processOrFail(filter: SendWelcomeEmail::class);
 ```
 
 ### Other Transport Assertions and Helpers

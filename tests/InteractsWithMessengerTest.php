@@ -953,7 +953,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageB());
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
 
-        $this->transport()->process(MessageB::class);
+        $this->transport()->process(filter: MessageB::class);
 
         $this->transport()->queue()->assertContains(MessageA::class, 2);
         $this->transport()->queue()->assertNotContains(MessageB::class);
@@ -968,7 +968,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageB(true));
 
-        $this->transport()->process(static fn(MessageB $m) => $m->fail);
+        $this->transport()->process(filter: static fn(MessageB $m) => $m->fail);
 
         $this->transport()->queue()->assertContains(MessageA::class, 1);
         $this->transport()->rejected()->assertCount(1);
@@ -982,31 +982,72 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageB(), [new DelayStamp(10_000)]);
 
-        Assert::that(fn() => $this->transport()->process(MessageB::class))
-            ->throws(AssertionFailedError::class, 'Expected to process a message matching the given filter, but none was found on the queue.')
-        ;
+        $this->transport()->process(filter: MessageB::class);
 
         $this->transport()->queue()->assertCount(1);
         $this->assertEmpty(self::getContainer()->get(MessageBHandler::class)->messages);
 
         $clock->sleep(10);
-        $this->transport()->process(MessageB::class);
+        $this->transport()->process(filter: MessageB::class);
 
         $this->transport()->queue()->assertEmpty();
+        $this->assertCount(1, self::getContainer()->get(MessageBHandler::class)->messages);
     }
 
     #[Test]
-    public function processing_a_specific_message_fails_when_nothing_matches(): void
+    public function processing_a_specific_number_of_specific_messages_fails_when_not_enough_match(): void
     {
         self::bootKernel();
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
 
-        Assert::that(fn() => $this->transport()->process(MessageB::class))
-            ->throws(AssertionFailedError::class, 'Expected to process a message matching the given filter, but none was found on the queue.')
+        Assert::that(fn() => $this->transport()->process(1, MessageB::class))
+            ->throws(AssertionFailedError::class, 'Expected to process 1 messages matching the filter but only processed 0.')
         ;
 
         $this->transport()->queue()->assertCount(1);
+    }
+
+    #[Test]
+    public function processing_specific_messages_does_not_fail_when_nothing_matches_the_filter(): void
+    {
+        self::bootKernel();
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        $this->transport()->process(filter: MessageB::class);
+
+        $this->transport()->queue()->assertCount(1);
+        $this->transport()->acknowledged()->assertEmpty();
+    }
+
+    #[Test]
+    public function process_or_fail_fails_when_nothing_matches_the_filter(): void
+    {
+        self::bootKernel();
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+
+        Assert::that(fn() => $this->transport()->processOrFail(filter: MessageB::class))
+            ->throws(AssertionFailedError::class, 'No messages matching the filter to process.')
+        ;
+
+        $this->transport()->queue()->assertCount(1);
+    }
+
+    #[Test]
+    public function process_or_fail_processes_the_matching_messages(): void
+    {
+        self::bootKernel();
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageB());
+
+        $this->transport()->processOrFail(filter: MessageB::class);
+
+        $this->transport()->queue()->assertCount(1);
+        $this->transport()->queue()->assertContains(MessageA::class, 1);
+        $this->transport()->acknowledged()->assertContains(MessageB::class, 1);
     }
 
     #[Test]
@@ -1016,7 +1057,7 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageD());
 
-        $this->transport()->process(MessageD::class);
+        $this->transport()->process(filter: MessageD::class);
 
         $this->transport()->queue()->assertCount(1);
         $this->transport()->queue()->assertContains(MessageE::class, 1);
@@ -1024,18 +1065,34 @@ final class InteractsWithMessengerTest extends WebTestCase
     }
 
     #[Test]
-    public function processing_a_specific_message_processes_the_first_match_when_several_match(): void
+    public function processing_a_specific_number_of_messages_processes_the_first_matches(): void
     {
         self::bootKernel();
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
 
-        $this->transport()->process(MessageA::class);
+        $this->transport()->process(1, MessageA::class);
 
         $this->transport()->rejected()->assertEmpty();
 
         $this->transport()->queue()->assertContains(MessageA::class, 1);
+    }
+
+    #[Test]
+    public function processing_specific_messages_processes_every_match(): void
+    {
+        self::bootKernel();
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA());
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageB());
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageB());
+
+        $this->transport()->process(filter: MessageB::class);
+
+        $this->transport()->queue()->assertCount(1);
+        $this->transport()->queue()->assertContains(MessageA::class, 1);
+        $this->assertCount(2, self::getContainer()->get(MessageBHandler::class)->messages);
     }
 
     #[Test]
@@ -1049,7 +1106,7 @@ final class InteractsWithMessengerTest extends WebTestCase
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageB());
 
-        Assert::that(fn() => $this->transport()->process(static fn(MessageA $m) => $m->fail))
+        Assert::that(fn() => $this->transport()->process(filter: static fn(MessageA $m) => $m->fail))
             ->throws(\RuntimeException::class, 'handling failed...')
         ;
 

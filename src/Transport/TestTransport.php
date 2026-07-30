@@ -176,22 +176,18 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      * a message dispatches more messages, these will be processed as well (up
      * to $number).
      *
-     * When a callable or class-string is passed, only the first matching message
-     * still due on the queue is processed; every other message stays untouched.
+     * When a $filter is passed, only the messages matching it are processed;
+     * every other message stays untouched.
      *
-     * @param int|callable|class-string $numberOrFilter the number of messages to process (-1 for all),
-     *                                                  or a filter to process a single matching message
+     * @template T of object
+     *
+     * @param int                                   $number the number of messages to process (-1 for all)
+     * @param class-string<T>|callable(T):bool|null $filter only process the messages matching this message
+     *                                                      class-string or predicate
      */
-    public function process(int|callable|string $numberOrFilter = -1): self
+    public function process(int $number = -1, callable|string|null $filter = null): self
     {
-        if (\is_int($numberOrFilter)) {
-            $number = $numberOrFilter;
-            $receiver = $this;
-        } else {
-            $receiver = new FilteredReceiver($this, new EnvelopeFilter($numberOrFilter));
-            $number = 1;
-        }
-
+        $receiver = null === $filter ? $this : new FilteredReceiver($this, new EnvelopeFilter($filter));
         $processCount = 0;
 
         // keep track of added listeners/subscribers so we can remove after
@@ -238,17 +234,15 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             $this->dispatcher->removeSubscriber($subscriber);
         }
 
-        if (!\is_int($numberOrFilter)) {
+        if ($number > 0) {
+            $failure = null === $filter
+                ? 'Expected to process {expected} messages but only processed {actual}.'
+                : 'Expected to process {expected} messages matching the filter but only processed {actual}.';
+
             if ($this->impactsAssertionsCount()) {
-                Assert::true($processCount > 0, 'Expected to process a message matching the given filter, but none was found on the queue.');
-            } elseif (0 === $processCount) {
-                Assert::fail('Expected to process a message matching the given filter, but none was found on the queue.');
-            }
-        } elseif ($number > 0) {
-            if ($this->impactsAssertionsCount()) {
-                Assert::that($processCount)->is($number, 'Expected to process {expected} messages but only processed {actual}.');
+                Assert::that($processCount)->is($number, $failure);
             } elseif ($processCount !== $number) {
-                Assert::fail('Expected to process {expected} messages but only processed {actual}.', ['expected' => $number, 'actual' => $processCount]);
+                Assert::fail($failure, ['expected' => $number, 'actual' => $processCount]);
             }
         }
 
@@ -256,17 +250,26 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     }
 
     /**
-     * Works the same as {@see process()} but fails if no messages on queue.
+     * Works the same as {@see process()} but fails if no (matching) messages on queue.
+     *
+     * @template T of object
+     *
+     * @param int                                   $number the number of messages to process (-1 for all)
+     * @param class-string<T>|callable(T):bool|null $filter only process the messages matching this message
+     *                                                      class-string or predicate
      */
-    public function processOrFail(int $number = -1): self
+    public function processOrFail(int $number = -1, callable|string|null $filter = null): self
     {
+        $envelopeFilter = null === $filter ? null : new EnvelopeFilter($filter);
+        $failure = null === $filter ? 'No messages to process.' : 'No messages matching the filter to process.';
+
         if ($this->impactsAssertionsCount()) {
-            Assert::true($this->hasMessagesToProcess(), 'No messages to process.');
-        } elseif (!$this->hasMessagesToProcess()) {
-            Assert::fail('No messages to process.');
+            Assert::true($this->hasMessagesToProcess($envelopeFilter), $failure);
+        } elseif (!$this->hasMessagesToProcess($envelopeFilter)) {
+            Assert::fail($failure);
         }
 
-        return $this->process($number);
+        return $this->process($number, $filter);
     }
 
     public function queue(): TransportEnvelopeCollection
@@ -533,8 +536,20 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         return [$envelope];
     }
 
-    private function hasMessagesToProcess(): bool
+    private function hasMessagesToProcess(?EnvelopeFilter $filter = null): bool
     {
-        return !empty(self::$queue[$this->name] ?? []);
+        $queue = self::$queue[$this->name] ?? [];
+
+        if (null === $filter) {
+            return !empty($queue);
+        }
+
+        foreach ($queue as $envelope) {
+            if ($filter($envelope)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
