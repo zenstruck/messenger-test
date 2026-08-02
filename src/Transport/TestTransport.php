@@ -26,6 +26,7 @@ use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Worker;
 use Zenstruck\Assert;
+use Zenstruck\Messenger\Test\EnvelopeFilter;
 use Zenstruck\Messenger\Test\Stamp\AvailableAtStamp;
 use Zenstruck\Messenger\Test\TestEnvelope;
 
@@ -175,10 +176,18 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      * a message dispatches more messages, these will be processed as well (up
      * to $number).
      *
-     * @param int $number the number of messages to process (-1 for all)
+     * When a $filter is passed, only the messages matching it are processed;
+     * every other message stays untouched.
+     *
+     * @template T of object
+     *
+     * @param int                                   $number the number of messages to process (-1 for all)
+     * @param class-string<T>|callable(T):bool|null $filter only process the messages matching this message
+     *                                                      class-string or predicate
      */
-    public function process(int $number = -1): self
+    public function process(int $number = -1, callable|string|null $filter = null): self
     {
+        $receiver = null === $filter ? $this : new FilteredReceiver($this, new EnvelopeFilter($filter));
         $processCount = 0;
 
         // keep track of added listeners/subscribers so we can remove after
@@ -213,7 +222,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             );
         }
 
-        $worker = new Worker([$this->name => $this], $this->bus, $this->dispatcher);
+        $worker = new Worker([$this->name => $receiver], $this->bus, $this->dispatcher);
         $worker->run(['sleep' => 0]);
 
         // remove added listeners/subscribers
@@ -226,10 +235,14 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         }
 
         if ($number > 0) {
+            $failure = null === $filter
+                ? 'Expected to process {expected} messages but only processed {actual}.'
+                : 'Expected to process {expected} messages matching the filter but only processed {actual}.';
+
             if ($this->impactsAssertionsCount()) {
-                Assert::that($processCount)->is($number, 'Expected to process {expected} messages but only processed {actual}.');
+                Assert::that($processCount)->is($number, $failure);
             } elseif ($processCount !== $number) {
-                Assert::fail('Expected to process {expected} messages but only processed {actual}.', ['expected' => $number, 'actual' => $processCount]);
+                Assert::fail($failure, ['expected' => $number, 'actual' => $processCount]);
             }
         }
 
@@ -237,17 +250,26 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     }
 
     /**
-     * Works the same as {@see process()} but fails if no messages on queue.
+     * Works the same as {@see process()} but fails if no (matching) messages on queue.
+     *
+     * @template T of object
+     *
+     * @param int                                   $number the number of messages to process (-1 for all)
+     * @param class-string<T>|callable(T):bool|null $filter only process the messages matching this message
+     *                                                      class-string or predicate
      */
-    public function processOrFail(int $number = -1): self
+    public function processOrFail(int $number = -1, callable|string|null $filter = null): self
     {
+        $envelopeFilter = null === $filter ? null : new EnvelopeFilter($filter);
+        $failure = null === $filter ? 'No messages to process.' : 'No messages matching the filter to process.';
+
         if ($this->impactsAssertionsCount()) {
-            Assert::true($this->hasMessagesToProcess(), 'No messages to process.');
-        } elseif (!$this->hasMessagesToProcess()) {
-            Assert::fail('No messages to process.');
+            Assert::true($this->hasMessagesToProcess($envelopeFilter), $failure);
+        } elseif (!$this->hasMessagesToProcess($envelopeFilter)) {
+            Assert::fail($failure);
         }
 
-        return $this->process($number);
+        return $this->process($number, $filter);
     }
 
     public function queue(): TransportEnvelopeCollection
@@ -279,34 +301,38 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             throw new \InvalidArgumentException(\sprintf('"%s()" only supports fetchSize of 1, "%s" given.', __METHOD__, $fetchSize));
         }
 
+        return $this->getMatching(null);
+    }
+
+    /**
+     * @internal
+     *
+     * @return iterable<Envelope>
+     */
+    public function getMatching(?EnvelopeFilter $filter): iterable
+    {
         if (!isset(self::$queue[$this->name]) || !self::$queue[$this->name]) {
             return [];
         }
 
-        if (!$this->supportsDelayStamp()) {
-            if ($this->shouldTestSerialization()) {
-                // Simulate real transport by encoding/decoding the message
-                return [$this->serializer->decode($this->serializer->encode(\array_shift(self::$queue[$this->name])))];
-            }
-
-            return [\array_shift(self::$queue[$this->name])];
+        if (null === $filter && !$this->supportsDelayStamp()) {
+            return $this->deliver(\array_shift(self::$queue[$this->name]));
         }
 
-        $now = $this->clock->now();
+        $now = $this->supportsDelayStamp() ? $this->clock->now() : null;
 
         foreach (self::$queue[$this->name] as $i => $envelope) {
-            if (($availableAtStamp = $envelope->last(AvailableAtStamp::class)) && $now < $availableAtStamp->getAvailableAt()) {
+            if (null !== $now && ($availableAtStamp = $envelope->last(AvailableAtStamp::class)) && $now < $availableAtStamp->getAvailableAt()) {
+                continue;
+            }
+
+            if (null !== $filter && !$filter($envelope)) {
                 continue;
             }
 
             unset(self::$queue[$this->name][$i]);
 
-            if ($this->shouldTestSerialization()) {
-                // Simulate real transport by encoding/decoding the message
-                return [$this->serializer->decode($this->serializer->encode($envelope))];
-            }
-
-            return [$envelope];
+            return $this->deliver($envelope);
         }
 
         return [];
@@ -497,8 +523,33 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         $messagesCollection[$this->name][] = $envelope;
     }
 
-    private function hasMessagesToProcess(): bool
+    /**
+     * @return Envelope[]
+     */
+    private function deliver(Envelope $envelope): array
     {
-        return !empty(self::$queue[$this->name] ?? []);
+        if ($this->shouldTestSerialization()) {
+            // Simulate real transport by encoding/decoding the message
+            return [$this->serializer->decode($this->serializer->encode($envelope))];
+        }
+
+        return [$envelope];
+    }
+
+    private function hasMessagesToProcess(?EnvelopeFilter $filter = null): bool
+    {
+        $queue = self::$queue[$this->name] ?? [];
+
+        if (null === $filter) {
+            return !empty($queue);
+        }
+
+        foreach ($queue as $envelope) {
+            if ($filter($envelope)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

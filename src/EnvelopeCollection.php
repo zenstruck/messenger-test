@@ -86,19 +86,15 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
         return $this;
     }
 
+    /**
+     * @template T of object
+     *
+     * @param class-string<T>|callable(T):bool|null $filter only return the first envelope matching this message
+     *                                                      class-string or predicate
+     */
     final public function first(callable|string|null $filter = null): TestEnvelope
     {
-        if (null === $filter) {
-            // just the first envelope
-            return $this->first(fn() => true);
-        }
-
-        if (!\is_callable($filter)) {
-            // first envelope for message class
-            return $this->first(fn(Envelope $e) => $filter === \get_class($e->getMessage()));
-        }
-
-        $filter = self::normalizeFilter($filter);
+        $filter = new EnvelopeFilter($filter ?? static fn() => true);
 
         foreach ($this->envelopes as $envelope) {
             if ($filter($envelope)) {
@@ -150,31 +146,5 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
     final public function count(): int
     {
         return \count($this->envelopes);
-    }
-
-    private static function normalizeFilter(callable $filter): callable
-    {
-        $function = new \ReflectionFunction($filter(...));
-
-        if (!$parameter = $function->getParameters()[0] ?? null) {
-            return $filter;
-        }
-
-        if (!$type = $parameter->getType()) {
-            return $filter;
-        }
-
-        if (!$type instanceof \ReflectionNamedType || $type->isBuiltin() || Envelope::class === $type->getName()) {
-            return $filter;
-        }
-
-        // user used message class name as type-hint
-        return static function(Envelope $envelope) use ($filter, $type) {
-            if ($type->getName() !== $envelope->getMessage()::class) {
-                return false;
-            }
-
-            return $filter($envelope->getMessage());
-        };
     }
 }
