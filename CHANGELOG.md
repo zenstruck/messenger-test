@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [v1.15.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.15.0)
+
+August 2nd, 2026 - [v1.14.0...v1.15.0](https://github.com/zenstruck/messenger-test/compare/v1.14.0...v1.15.0)
+
+* 26ffd01 feat: process a specific message from the queue (#106) by @podoko
+* 5bc11ad fix: prevent TestTransport from increasing phpunit's assertions count (#104) by @podoko
+* e3a1d7c minor: remove deprec (#110) by @nikophil
+* 67c0e7a chore: upgrade PHPUnit (#107) by @nikophil
+* 5557134 docs: fix envelope typo (#102) by @beau-ottens, beau-ottens
+
 ## [v1.14.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.14.0)
 
 February 11th, 2026 - [v1.13.0...v1.14.0](https://github.com/zenstruck/messenger-test/compare/v1.13.0...v1.14.0)
