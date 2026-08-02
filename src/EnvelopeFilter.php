@@ -23,8 +23,8 @@ final class EnvelopeFilter
     /**
      * @template T of object
      *
-     * @param string|callable(T):mixed $filter a message class-string, or a callable predicate receiving
-     *                                         the Envelope, the type-hinted message, or no argument
+     * @param class-string<T>|callable(T):bool $filter a message class-string, or a callable predicate receiving
+     *                                                 the Envelope, the type-hinted message, or no argument
      */
     public function __construct(string|callable $filter)
     {
@@ -37,7 +37,9 @@ final class EnvelopeFilter
     }
 
     /**
-     * @param callable|string $filter a callable predicate, or a message class-string
+     * @template T of object
+     *
+     * @param class-string<T>|callable(T):bool $filter a callable predicate, or a message class-string
      *
      * @return \Closure(Envelope):bool
      */

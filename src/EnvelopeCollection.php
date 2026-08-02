@@ -89,8 +89,8 @@ abstract class EnvelopeCollection implements \IteratorAggregate, \Countable
     /**
      * @template T of object
      *
-     * @param string|callable(T):mixed|null $filter only return the first envelope matching this message
-     *                                              class-string or predicate
+     * @param class-string<T>|callable(T):bool|null $filter only return the first envelope matching this message
+     *                                                      class-string or predicate
      */
     final public function first(callable|string|null $filter = null): TestEnvelope
     {
