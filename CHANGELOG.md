@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [v1.15.1](https://github.com/zenstruck/messenger-test/releases/tag/v1.15.1)
+
+October 28th, 2026 - [v1.15.0...v1.15.1](https://github.com/zenstruck/messenger-test/compare/v1.15.0...v1.15.1)
+
+* cc7f3ef fix: disable retries through the retry strategy (#109) by @nikophil, @kbond
+* 06eda6b fix: avoid mutating the event dispatcher on Symfony 8.2+ (#112) by @kbond
+
 ## [v1.15.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.15.0)
 
 August 2nd, 2026 - [v1.14.0...v1.15.0](https://github.com/zenstruck/messenger-test/compare/v1.14.0...v1.15.0)
