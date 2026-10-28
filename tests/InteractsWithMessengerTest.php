@@ -18,7 +18,6 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
@@ -38,6 +37,7 @@ use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageE;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageF;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageG;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageH;
+use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\WorkerMessageHandledListener;
 use Zenstruck\Messenger\Test\Tests\Fixture\NoBundleKernel;
 use Zenstruck\Messenger\Test\Transport\TestTransport;
 
@@ -789,20 +789,13 @@ final class InteractsWithMessengerTest extends WebTestCase
     #[Test]
     public function messenger_worker_events_are_dispatched_when_processing(): void
     {
-        $messages = [];
-
         self::bootKernel();
-
-        self::getContainer()->get('event_dispatcher')->addListener(
-            WorkerMessageHandledEvent::class,
-            static function(WorkerMessageHandledEvent $event) use (&$messages) {
-                $messages[] = $event->getEnvelope()->getMessage();
-            },
-        );
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch($message = new MessageA());
 
         $this->transport()->process();
+
+        $messages = self::getContainer()->get(WorkerMessageHandledListener::class)->messages;
 
         $this->assertCount(1, $messages);
         $this->assertEquals($message, $messages[0]);
