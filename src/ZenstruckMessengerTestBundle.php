@@ -122,8 +122,14 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
             // the locator arguments are plain References at this point (before ServiceLocatorTagPass),
             // but handle the wrapped form too in case pass ordering ever changes
             $inner = $strategy instanceof ServiceClosureArgument ? $strategy->getValues()[0] : $strategy;
+            $id = "zenstruck_messenger_test.retry_strategy.{$name}";
 
-            $container->register($id = "zenstruck_messenger_test.retry_strategy.{$name}", DisableableRetryStrategy::class)
+            // Symfony 8.1+ kernels also register this bundle as a compiler pass, so it can run twice
+            if ((string) $inner === $id) {
+                continue;
+            }
+
+            $container->register($id, DisableableRetryStrategy::class)
                 ->setArguments([$inner, $name])
             ;
 

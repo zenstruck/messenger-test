@@ -842,10 +842,11 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
 
-        $this->transport('async4')->process(1)->rejected()->assertContains(MessageA::class, 1);
+        $this->transport('async4')->process(1)->queue()->assertContains(MessageA::class, 1);
 
         $clock->sleep(1);
-        $this->transport('async4')->process(1)->rejected()->assertContains(MessageA::class, 2);
+        $this->transport('async4')->process(1)->queue()->assertEmpty();
+        $this->transport('async4')->dispatched()->assertContains(MessageA::class, 2);
     }
 
     #[Test]
@@ -856,7 +857,8 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
 
-        $this->transport('async')->process()->rejected()->assertContains(MessageA::class, 2);
+        $this->transport('async')->process()->queue()->assertEmpty();
+        $this->transport('async')->dispatched()->assertContains(MessageA::class, 2);
     }
 
     #[Test]
@@ -1149,12 +1151,12 @@ final class InteractsWithMessengerTest extends WebTestCase
         $async = $this->transport('async')->enableRetries();
 
         // first attempt fails and is retried: nothing on the failure transport yet
-        $async->process()->rejected()->assertContains(MessageA::class, 1);
+        $async->process()->queue()->assertContains(MessageA::class, 1);
         $this->transport('failed')->queue()->assertEmpty();
 
         // the retry is now due and fails again: retries are exhausted, so the message is sent to the failure transport
         $clock->sleep(1);
-        $async->process()->rejected()->assertContains(MessageA::class, 2);
+        $async->process()->queue()->assertEmpty();
         $this->transport('failed')->queue()->assertCount(1)->assertContains(MessageA::class, 1);
     }
 
