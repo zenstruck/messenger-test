@@ -13,6 +13,7 @@ namespace Zenstruck\Messenger\Test\Transport;
 
 use Psr\Clock\ClockInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\ScopedEventDispatcher;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerRunningEvent;
@@ -190,11 +191,13 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         $receiver = null === $filter ? $this : new FilteredReceiver($this, new EnvelopeFilter($filter));
         $processCount = 0;
 
+        $dispatcher = $this->scopedDispatcher();
+
         // keep track of added listeners/subscribers so we can remove after
         $listeners = [];
         $subscribers = [];
 
-        $this->dispatcher->addListener(
+        $dispatcher->addListener(
             WorkerRunningEvent::class,
             $listeners[WorkerRunningEvent::class] = static function(WorkerRunningEvent $event) use (&$processCount) {
                 if ($event->isWorkerIdle()) {
@@ -210,11 +213,11 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
 
         if ($number > 0) {
             // stop if limit was placed on number to process
-            $this->dispatcher->addSubscriber($subscribers[] = new StopWorkerOnMessageLimitListener($number));
+            $dispatcher->addSubscriber($subscribers[] = new StopWorkerOnMessageLimitListener($number));
         }
 
         if (!$this->isCatchingExceptions()) {
-            $this->dispatcher->addListener(
+            $dispatcher->addListener(
                 WorkerMessageFailedEvent::class,
                 $listeners[WorkerMessageFailedEvent::class] = static function(WorkerMessageFailedEvent $event) {
                     throw $event->getThrowable();
@@ -222,16 +225,16 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             );
         }
 
-        $worker = new Worker([$this->name => $receiver], $this->bus, $this->dispatcher);
+        $worker = new Worker([$this->name => $receiver], $this->bus, $dispatcher);
         $worker->run(['sleep' => 0]);
 
         // remove added listeners/subscribers
         foreach ($listeners as $event => $listener) {
-            $this->dispatcher->removeListener($event, $listener);
+            $dispatcher->removeListener($event, $listener);
         }
 
         foreach ($subscribers as $subscriber) {
-            $this->dispatcher->removeSubscriber($subscriber);
+            $dispatcher->removeSubscriber($subscriber);
         }
 
         if ($number > 0) {
@@ -477,6 +480,16 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     public function impactsAssertionsCount(): bool
     {
         return self::$impactsAssertionsCount[$this->name] ?? throw new \LogicException(\sprintf('Transport "%s" is not initialized.', $this->name));
+    }
+
+    private function scopedDispatcher(): EventDispatcherInterface
+    {
+        // Symfony 8.2+ deprecates mutating the container's dispatcher
+        if (\class_exists(ScopedEventDispatcher::class)) {
+            return new ScopedEventDispatcher($this->dispatcher);
+        }
+
+        return $this->dispatcher;
     }
 
     /**

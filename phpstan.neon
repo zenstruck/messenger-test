@@ -3,3 +3,9 @@ parameters:
     paths:
         - src
     treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # ScopedEventDispatcher only exists in Symfony 8.2+
+        -
+            message: '#ScopedEventDispatcher#'
+            path: src/Transport/TestTransport.php
+            reportUnmatched: false
