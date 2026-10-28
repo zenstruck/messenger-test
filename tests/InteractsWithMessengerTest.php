@@ -21,6 +21,7 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
+use Symfony\Component\Messenger\Stamp\SentToFailureTransportStamp;
 use Symfony\Component\Messenger\Stamp\SerializerStamp;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 use Zenstruck\Assert;
@@ -841,10 +842,11 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
 
-        $this->transport('async4')->process(1)->rejected()->assertContains(MessageA::class, 1);
+        $this->transport('async4')->process(1)->queue()->assertContains(MessageA::class, 1);
 
         $clock->sleep(1);
-        $this->transport('async4')->process(1)->rejected()->assertContains(MessageA::class, 2);
+        $this->transport('async4')->process(1)->queue()->assertEmpty();
+        $this->transport('async4')->dispatched()->assertContains(MessageA::class, 2);
     }
 
     #[Test]
@@ -855,7 +857,8 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
 
-        $this->transport('async')->process()->rejected()->assertContains(MessageA::class, 2);
+        $this->transport('async')->process()->queue()->assertEmpty();
+        $this->transport('async')->dispatched()->assertContains(MessageA::class, 2);
     }
 
     #[Test]
@@ -1108,6 +1111,118 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         $this->transport()->process(1);
         $this->assertCount(1, self::getContainer()->get(MessageAHandler::class)->messages);
+    }
+
+    #[Test]
+    public function failed_messages_are_sent_to_the_failure_transport(): void
+    {
+        self::bootKernel(['environment' => 'failure_transport']);
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->transport('async')->process(1)->rejected()->assertContains(MessageA::class, 1);
+        $this->transport('failed')->queue()->assertCount(1)->assertContains(MessageA::class, 1);
+    }
+
+    #[Test]
+    public function messages_on_the_failure_transport_keep_the_sent_to_failure_stamp(): void
+    {
+        self::bootKernel(['environment' => 'failure_transport']);
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->transport('async')->process(1);
+
+        $stamp = $this->transport('failed')->queue()->first()->envelope->last(SentToFailureTransportStamp::class);
+
+        self::assertInstanceOf(SentToFailureTransportStamp::class, $stamp);
+        self::assertSame('async', $stamp->getOriginalReceiverName());
+    }
+
+    #[Test]
+    public function messages_are_retried_before_being_sent_to_the_failure_transport(): void
+    {
+        $clock = self::mockTime();
+
+        self::bootKernel(['environment' => 'failure_transport']);
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $async = $this->transport('async')->enableRetries();
+
+        // first attempt fails and is retried: nothing on the failure transport yet
+        $async->process()->queue()->assertContains(MessageA::class, 1);
+        $this->transport('failed')->queue()->assertEmpty();
+
+        // the retry is now due and fails again: retries are exhausted, so the message is sent to the failure transport
+        $clock->sleep(1);
+        $async->process()->queue()->assertEmpty();
+        $this->transport('failed')->queue()->assertCount(1)->assertContains(MessageA::class, 1);
+    }
+
+    #[Test]
+    public function failed_messages_are_sent_to_the_global_failure_transport(): void
+    {
+        self::bootKernel(['environment' => 'global_failure_transport']);
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->transport('async')->process(1)->rejected()->assertContains(MessageA::class, 1);
+        $this->transport('failed')->queue()->assertCount(1)->assertContains(MessageA::class, 1);
+    }
+
+    #[Test]
+    public function the_failure_transport_can_itself_be_processed(): void
+    {
+        self::bootKernel(['environment' => 'global_failure_transport']);
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->transport('async')->process(1);
+        $this->transport('failed')->queue()->assertCount(1);
+
+        // processing the failure transport must not loop the message back to itself
+        $this->transport('failed')->process(1)->rejected()->assertContains(MessageA::class, 1);
+        $this->transport('failed')->queue()->assertEmpty();
+    }
+
+    #[Test]
+    public function failed_messages_without_a_failure_transport_are_only_rejected(): void
+    {
+        self::bootKernel();
+
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+
+        $this->transport()->process(1)->rejected()->assertContains(MessageA::class, 1);
+        $this->transport()->queue()->assertEmpty();
+    }
+
+    #[Test]
+    public function added_listeners_are_removed_after_a_throwing_process(): void
+    {
+        self::bootKernel(['environment' => 'failure_transport']);
+
+        $bus = self::getContainer()->get(MessageBusInterface::class);
+        $async = $this->transport('async');
+
+        // a throwing process() must still remove the listeners it registered (done in a finally block),
+        // otherwise the throw-on-failure listener would leak into the next process()
+        $async->throwExceptions();
+        $bus->dispatch(new MessageA(true));
+
+        try {
+            $async->process();
+
+            $this->fail('The exception should have been thrown.');
+        } catch (\RuntimeException $e) {
+            self::assertStringContainsString('handling failed...', $e->getMessage());
+        }
+
+        // the dispatcher is clean: enabling retries now re-queues the failed message instead of throwing
+        $async->catchExceptions()->enableRetries();
+        $bus->dispatch(new MessageA(true));
+
+        $async->process(1)->queue()->assertContains(MessageA::class, 1);
     }
 
     protected static function bootKernel(array $options = []): KernelInterface // @phpstan-ignore-line

@@ -499,6 +499,48 @@ when@test:
 > [!NOTE]
 > Setting `impacts_assertions_count` to `false` will become the default behavior in 2.0.
 
+### Failure Transport
+
+When a transport is configured with a
+[failure transport](https://symfony.com/doc/current/messenger.html#saving-retrying-failed-messages),
+failed messages are forwarded to it exactly as they would be in production: immediately when
+retries are disabled (the default, see [Enable Retries](#enable-retries)) or once retries are
+exhausted. The failure transport is a `TestTransport` like any other, so you can assert on it:
+
+```yaml
+# config/packages/messenger.yaml
+
+when@test:
+    framework:
+        messenger:
+            failure_transport: failed
+            transports:
+                async: test://
+                failed: test://
+```
+
+```php
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Zenstruck\Messenger\Test\InteractsWithMessenger;
+
+class MyTest extends KernelTestCase // or WebTestCase
+{
+    use InteractsWithMessenger;
+
+    public function test_failed_messages_are_sent_to_the_failure_transport(): void
+    {
+        // ...some code that routes a failing message to the "async" transport
+
+        $this->transport('async')->process(1)
+            ->rejected()->assertContains(MyMessage::class, 1)
+        ;
+
+        // the message has been forwarded to the "failed" failure transport
+        $this->transport('failed')->queue()->assertContains(MyMessage::class, 1);
+    }
+}
+```
+
 
 ## Bus
 
