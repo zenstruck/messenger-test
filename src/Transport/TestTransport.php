@@ -482,16 +482,6 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         return self::$impactsAssertionsCount[$this->name] ?? throw new \LogicException(\sprintf('Transport "%s" is not initialized.', $this->name));
     }
 
-    private function scopedDispatcher(): EventDispatcherInterface
-    {
-        // Symfony 8.2+ deprecates mutating the container's dispatcher
-        if (\class_exists(ScopedEventDispatcher::class)) {
-            return new ScopedEventDispatcher($this->dispatcher);
-        }
-
-        return $this->dispatcher;
-    }
-
     /**
      * @phpstan-assert-if-true !null $this->clock
      */
@@ -521,6 +511,16 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     public static function disableResetOnKernelShutdown(): void
     {
         self::$resetOnKernelShutdownEnabled = false;
+    }
+
+    private function scopedDispatcher(): EventDispatcherInterface
+    {
+        // Symfony 8.2+ deprecates mutating the container's dispatcher
+        if (\class_exists(ScopedEventDispatcher::class)) {
+            return new ScopedEventDispatcher($this->dispatcher);
+        }
+
+        return $this->dispatcher;
     }
 
     /**
