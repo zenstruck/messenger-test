@@ -1,0 +1,12 @@
+imports:
+    - { resource: multi_processing.yaml }
+
+framework:
+    messenger:
+        identity_stamps: true
+        transports:
+            second:
+                retry_strategy:
+                    service: messenger_test_retry_strategy
+        routing:
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageC: first

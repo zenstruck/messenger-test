@@ -267,6 +267,83 @@ $this->transport()->queue()->first()->assertHasStamp(
 The assertion passes if at least one stamp of that type matches the predicate.
 It fails when the stamp is missing or none of its instances match.
 
+### Testing Symfony 8.2 Flows
+
+Symfony 8.2's `ChainStamp` dispatches each step after the previous one succeeds.
+Use `processAll()` to follow a chain across transports. In this example, `ChargeCard`
+is routed to `payments` and `ShipOrder` to `shipping`, both configured with `test://`:
+
+```php
+use Symfony\Component\Messenger\Stamp\ChainStamp;
+
+$chain = ChainStamp::envelope(new ChargeCard($orderId), new ShipOrder($orderId));
+$root = $this->bus()->dispatch($chain);
+
+$this->processAll(['payments', 'shipping']);
+
+$this->transport('payments')->acknowledged()->assertContains(ChargeCard::class);
+$this->transport('shipping')->acknowledged()->assertContains(ShipOrder::class);
+```
+
+A failed step stops the chain. Delayed steps stay queued until they are due.
+
+To assert message relationships, enable Symfony's identity stamps:
+
+```yaml
+framework:
+    messenger:
+        identity_stamps: true
+```
+
+Each step has its own message ID, shares the flow's correlation ID, and records
+the preceding message's ID as its cause. Continuing the example above:
+
+```php
+use Symfony\Component\Messenger\Stamp\CausationStamp;
+use Symfony\Component\Messenger\Stamp\CorrelationStamp;
+use Symfony\Component\Messenger\Stamp\MessageIdStamp;
+
+$rootStamp = $root->last(MessageIdStamp::class);
+$rootId = $rootStamp->getId();
+$shipped = $this->transport('shipping')->acknowledged()->first(ShipOrder::class);
+
+$shipped->assertHasStamp(CorrelationStamp::class, fn(CorrelationStamp $stamp) => $stamp->getId() === $rootId);
+$shipped->assertHasStamp(CausationStamp::class, fn(CausationStamp $stamp) => $stamp->getId() === $rootId);
+```
+
+Custom stamps implementing Symfony's `PropagatedStampInterface` also travel to
+subsequent messages. Use stamp predicates to assert their values on each step.
+
+#### Failure Compensation
+
+Attach a `DispatchOnFailureStamp` to dispatch a compensation message when a step
+fails permanently. With a fixture that makes shipping fail, and `CancelOrder`
+routed to `payments`, assert the compensation and the message that caused it:
+
+```php
+use Symfony\Component\Messenger\Stamp\ChainStamp;
+use Symfony\Component\Messenger\Stamp\DispatchOnFailureStamp;
+use Symfony\Component\Messenger\Stamp\FailedMessageStamp;
+
+$chain = ChainStamp::envelope(new ChargeCard($orderId), new ShipOrder($orderId));
+$this->bus()->dispatch($chain, [new DispatchOnFailureStamp(new CancelOrder($orderId))]);
+
+$this->processAll(['payments', 'shipping']);
+
+$cancelled = $this->transport('payments')->acknowledged()->first(CancelOrder::class);
+$cancelled->assertHasStamp(FailedMessageStamp::class, fn(FailedMessageStamp $stamp) => $stamp->getMessage() instanceof ShipOrder);
+```
+
+The compensation also carries an `ErrorDetailsStamp` describing the failure.
+When compensation can be dispatched, the original message is not sent to the
+failure transport. If compensation cannot be dispatched, the original message is
+sent there instead.
+
+Keep exception catching enabled for compensation tests. Retries are disabled by
+default, so compensation runs after the first failure. To test retry exhaustion,
+enable retries on the failing transport, mock time, and advance the retry delay
+before calling `processAll()` again.
+
 ### Processing Exceptions
 
 By default, when processing a message that fails, the `TestTransport` catches
