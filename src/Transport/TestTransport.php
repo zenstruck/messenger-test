@@ -80,6 +80,9 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     /** @var array<string, Envelope[]> */
     private static array $queue = [];
 
+    /** @var \WeakMap<Envelope, array{body: string, headers?: array<string, string>}>|null */
+    private static ?\WeakMap $encoded = null;
+
     // this setting applies to all transports
     private static bool $enableMessagesCollection = true;
     private static bool $resetOnKernelShutdownEnabled = true;
@@ -382,6 +385,8 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     public function send($what): Envelope
     {
+        $encoded = \is_array($what) ? $what : null;
+
         if (\is_array($what)) {
             $what = $this->serializer->decode($what);
         }
@@ -397,18 +402,8 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         }
 
         if ($this->shouldTestSerialization()) {
-            if ($this->impactsAssertionsCount()) {
-                Assert::try(
-                    fn() => $this->serializer->decode($this->serializer->encode($envelope)),
-                    'A problem occurred in the serialization process.',
-                );
-            } else {
-                try {
-                    $this->serializer->decode($this->serializer->encode($envelope));
-                } catch (\Throwable $e) {
-                    Assert::fail('A problem occurred in the serialization process.', ['exception' => $e, 'message' => $e->getMessage()]);
-                }
-            }
+            self::$encoded ??= new \WeakMap();
+            self::$encoded[$envelope] = $this->encode($envelope, $encoded);
         }
 
         $this->collectMessage(self::$dispatched, $envelope);
@@ -435,6 +430,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     public static function resetAll(): void
     {
         self::$queue = self::$dispatched = self::$acknowledged = self::$rejected = [];
+        self::$encoded = null;
         self::initialize();
     }
 
@@ -545,12 +541,36 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     private function deliver(Envelope $envelope): array
     {
-        if ($this->shouldTestSerialization()) {
-            // Simulate real transport by encoding/decoding the message
-            return [$this->serializer->decode($this->serializer->encode($envelope))];
+        if (isset(self::$encoded[$envelope])) {
+            return [$this->serializer->decode(self::$encoded[$envelope])];
         }
 
         return [$envelope];
+    }
+
+    /**
+     * @param array{body: string, headers?: array<string, string>}|null $encoded
+     *
+     * @return array{body: string, headers?: array<string, string>}
+     */
+    private function encode(Envelope $envelope, ?array $encoded): array
+    {
+        $serialize = function() use ($envelope, $encoded): array {
+            $encoded ??= $this->serializer->encode($envelope);
+            $this->serializer->decode($encoded);
+
+            return $encoded;
+        };
+
+        if ($this->impactsAssertionsCount()) {
+            return Assert::try($serialize, 'A problem occurred in the serialization process.');
+        }
+
+        try {
+            return $serialize();
+        } catch (\Throwable $e) {
+            Assert::fail('A problem occurred in the serialization process.', ['exception' => $e, 'message' => $e->getMessage()]);
+        }
     }
 
     private function hasMessagesToProcess(?EnvelopeFilter $filter = null): bool
