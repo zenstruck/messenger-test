@@ -402,10 +402,11 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             $envelope = $envelope->with(AvailableAtStamp::fromDelayStamp($delayStamp, $this->clock->now()));
         }
 
+        // Check the stamp map to support analysis against Messenger versions without TrustStamp.
         if (!$this->shouldTestSerialization()
             && null === $encoded
             && \class_exists(TrustStamp::class)
-            && !$envelope->last(TrustStamp::class)
+            && !isset($envelope->all()[TrustStamp::class])
             && !$envelope->last(ReceivedStamp::class)
         ) {
             $envelope = $envelope->with(TrustStamp::trusted());
