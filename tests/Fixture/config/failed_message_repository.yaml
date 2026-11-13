@@ -1,0 +1,7 @@
+imports:
+    - { resource: failure_transport.yaml }
+
+services:
+    Symfony\Component\Messenger\Failure\FailedMessageRepository:
+        alias: messenger.failed_message_repository
+        public: true

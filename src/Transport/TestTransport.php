@@ -21,6 +21,7 @@ use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\ReceivedStamp;
+use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 use Symfony\Component\Messenger\Stamp\TrustStamp;
 use Symfony\Component\Messenger\Transport\Receiver\ListableReceiverInterface;
 use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
@@ -30,7 +31,6 @@ use Symfony\Component\Messenger\Worker;
 use Zenstruck\Assert;
 use Zenstruck\Messenger\Test\EnvelopeFilter;
 use Zenstruck\Messenger\Test\Stamp\AvailableAtStamp;
-use Zenstruck\Messenger\Test\TestEnvelope;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
@@ -84,6 +84,9 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
 
     /** @var \WeakMap<Envelope, array{body: string, headers?: array<string, string>}>|null */
     private static ?\WeakMap $encoded = null;
+
+    /** @var array<string, int> */
+    private static array $nextId = [];
 
     // this setting applies to all transports
     private static bool $enableMessagesCollection = true;
@@ -325,7 +328,11 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         }
 
         if (null === $filter && !$this->supportsDelayStamp()) {
-            return $this->deliver(\array_shift(self::$queue[$this->name]));
+            $id = \array_key_first(self::$queue[$this->name]);
+            $envelope = self::$queue[$this->name][$id];
+            unset(self::$queue[$this->name][$id]);
+
+            return $this->deliver($envelope);
         }
 
         $now = $this->supportsDelayStamp() ? $this->clock->now() : null;
@@ -352,6 +359,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     public function ack(Envelope $envelope): void
     {
+        $this->remove($envelope);
         $this->collectMessage(self::$acknowledged, $envelope);
     }
 
@@ -360,20 +368,25 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     public function reject(Envelope $envelope): void
     {
+        $this->remove($envelope);
         $this->collectMessage(self::$rejected, $envelope);
     }
 
     public function all(?int $limit = null): iterable
     {
         return \array_map(
-            static fn(TestEnvelope $envelope) => $envelope->envelope,
-            \array_slice($this->queue()->all(), 0, $limit),
+            fn(Envelope $envelope) => $this->deliver($envelope)[0],
+            \array_slice(self::$queue[$this->name] ?? [], 0, $limit),
         );
     }
 
     public function find(mixed $id): ?Envelope
     {
-        throw new \BadMethodCallException('Not supported.');
+        if ((!\is_int($id) && !\is_string($id)) || !isset(self::$queue[$this->name][$id])) {
+            return null;
+        }
+
+        return $this->deliver(self::$queue[$this->name][$id])[0];
     }
 
     public function getMessageCount(): int
@@ -397,7 +410,11 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             throw new \InvalidArgumentException(\sprintf('"%s()" requires a message/Envelope object or decoded message array. "%s" given.', __METHOD__, \get_debug_type($what)));
         }
 
+        $id = self::$nextId[$this->name] ?? 1;
+        self::$nextId[$this->name] = $id + 1;
         $envelope = Envelope::wrap($what);
+        $envelope = $envelope->withoutAll(TransportMessageIdStamp::class);
+        $envelope = $envelope->with(new TransportMessageIdStamp($id));
 
         if ($this->supportsDelayStamp() && $delayStamp = $envelope->last(DelayStamp::class)) {
             $envelope = $envelope->with(AvailableAtStamp::fromDelayStamp($delayStamp, $this->clock->now()));
@@ -418,7 +435,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         }
 
         $this->collectMessage(self::$dispatched, $envelope);
-        $this->collectMessage(self::$queue, $envelope, force: true);
+        self::$queue[$this->name][$id] = $envelope;
 
         if (!$this->isIntercepting()) {
             $this->process();
@@ -442,6 +459,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     {
         self::$queue = self::$dispatched = self::$acknowledged = self::$rejected = [];
         self::$encoded = null;
+        self::$nextId = [];
         self::initialize();
     }
 
@@ -537,9 +555,9 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     /**
      * @param array<string, Envelope[]> $messagesCollection
      */
-    private function collectMessage(array &$messagesCollection, Envelope $envelope, bool $force = false): void
+    private function collectMessage(array &$messagesCollection, Envelope $envelope): void
     {
-        if (!self::$enableMessagesCollection && !$force) {
+        if (!self::$enableMessagesCollection) {
             return;
         }
 
@@ -552,11 +570,28 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     private function deliver(Envelope $envelope): array
     {
-        if (isset(self::$encoded[$envelope])) {
-            return [$this->serializer->decode(self::$encoded[$envelope])];
+        if (!isset(self::$encoded[$envelope])) {
+            return [$envelope];
         }
 
-        return [$envelope];
+        $decoded = $this->serializer->decode(self::$encoded[$envelope]);
+
+        if ($stamp = $envelope->last(TransportMessageIdStamp::class)) {
+            $decoded = $decoded->withoutAll(TransportMessageIdStamp::class);
+            $decoded = $decoded->with($stamp);
+        }
+
+        return [$decoded];
+    }
+
+    private function remove(Envelope $envelope): void
+    {
+        $stamp = $envelope->last(TransportMessageIdStamp::class);
+        $id = $stamp?->getId();
+
+        if (\is_int($id) || \is_string($id)) {
+            unset(self::$queue[$this->name][$id]);
+        }
     }
 
     /**

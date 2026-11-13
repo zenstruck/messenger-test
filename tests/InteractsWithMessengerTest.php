@@ -19,6 +19,7 @@ use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
+use Symfony\Component\Messenger\Failure\FailedMessageRepository;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\SentToFailureTransportStamp;
@@ -894,11 +895,11 @@ final class InteractsWithMessengerTest extends WebTestCase
 
         $messages = \array_map(static fn(Envelope $e) => $e->getMessage(), $this->transport()->all());
 
-        $this->assertSame([$msgA, $msgB], $messages);
+        $this->assertEquals([$msgA, $msgB], $messages);
 
         $messages = \array_map(static fn(Envelope $e) => $e->getMessage(), $this->transport()->all(1));
 
-        $this->assertSame([$msgA], $messages);
+        $this->assertEquals([$msgA], $messages);
 
         $this->transport()->process();
 
@@ -906,11 +907,38 @@ final class InteractsWithMessengerTest extends WebTestCase
     }
 
     #[Test]
-    public function cannot_use_find_on_transport(): void
+    public function finding_an_unknown_message_returns_null(): void
     {
-        $this->expectException(\BadMethodCallException::class);
+        $this->assertNull($this->transport()->find(1));
+    }
 
-        $this->transport()->find(1);
+    #[Test]
+    public function can_manage_failed_messages_with_symfonys_repository(): void
+    {
+        if (!\class_exists(FailedMessageRepository::class)) {
+            self::markTestSkipped('Symfony 8.2 is required.');
+        }
+
+        self::bootKernel(['environment' => 'failed_message_repository']);
+        self::getContainer()->get(MessageBusInterface::class)->dispatch(new MessageA(true));
+        $this->transport('async')->process();
+
+        $repository = self::getContainer()->get(FailedMessageRepository::class);
+        $failed = \iterator_to_array($repository->all('failed'))[0];
+        $id = FailedMessageRepository::getMessageId($failed);
+        self::assertNotNull($id);
+        self::assertNotNull($repository->find($id, 'failed'));
+
+        $repository->redispatch($failed, 'failed');
+
+        $this->transport('failed')->queue()->assertEmpty();
+        $this->transport('async')->queue()->assertCount(1);
+        $this->transport('async')->process();
+
+        $failed = \iterator_to_array($repository->all('failed'))[0];
+        $repository->remove($failed, 'failed');
+
+        $this->transport('failed')->queue()->assertEmpty();
     }
 
     #[Test]
