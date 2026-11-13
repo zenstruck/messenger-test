@@ -11,6 +11,7 @@
 
 namespace Zenstruck\Messenger\Test\Tests\Transport;
 
+use PHPUnit\Framework\AssertionFailedError;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
@@ -264,6 +265,31 @@ final class TestTransportTest extends TestCase
         self::assertSame($id, $found->last(TransportMessageIdStamp::class)->getId());
         $transport->reject($found);
         self::assertSame(0, $transport->getMessageCount());
+    }
+
+    #[Test]
+    public function processing_all_transports_stops_endless_dispatch_loops(): void
+    {
+        $bus = $this->createStub(MessageBusInterface::class);
+        $bus->method('dispatch')->willReturnCallback(static function(object $message) use (&$transport) {
+            $transport->send(new MessageA());
+
+            return Envelope::wrap($message);
+        });
+        $transport = $this->createTransport(bus: $bus);
+        $transport->send(new MessageA());
+        $this->expectException(AssertionFailedError::class);
+        $this->expectExceptionMessage('Transports were not empty after 3 messages.');
+
+        TestTransport::processAll(['async' => $transport], 3);
+    }
+
+    #[Test]
+    public function processing_all_transports_requires_a_positive_limit(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        TestTransport::processAll([], 0);
     }
 
     private function requireClass(string $class): void

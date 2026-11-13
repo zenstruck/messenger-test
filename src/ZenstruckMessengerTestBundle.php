@@ -76,13 +76,19 @@ final class ZenstruckMessengerTestBundle extends Bundle implements CompilerPassI
 
             $transport->addTag('kernel.reset', ['method' => 'resetOnKernelShutdown', 'on_invalid' => 'ignore']);
 
+            $failureTransport = false;
+            $priority = 0;
+
             foreach ($tags as $tag) {
                 if (isset($tag['alias'])) {
                     $name = $tag['alias'];
                 }
+
+                $failureTransport = $failureTransport || ($tag['is_failure_transport'] ?? false);
+                $priority = $tag['priority'] ?? $priority;
             }
 
-            $transportRegistry->addMethodCall('register', [$name, new Reference($id)]);
+            $transportRegistry->addMethodCall('register', [$name, new Reference($id), $failureTransport, $priority]);
         }
 
         $busRegistry = $container->getDefinition('zenstruck_messenger_test.bus_registry');

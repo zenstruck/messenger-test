@@ -1,0 +1,8 @@
+imports:
+    - { resource: multi_processing.yaml }
+
+framework:
+    messenger:
+        transports:
+            second:
+                priority: 10

@@ -1,0 +1,18 @@
+imports:
+    - { resource: test.yaml }
+
+framework:
+    messenger:
+        failure_transport: failed
+        transports:
+            first: test://?support_delay_stamp=true&impacts_assertions_count=false
+            second: test://?support_delay_stamp=true&impacts_assertions_count=false
+            failed: test://?support_delay_stamp=true&impacts_assertions_count=false
+            ignored: in-memory://
+        routing:
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA: first
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageB: second
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageC: ignored
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageD: second
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageE: first
+            Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageF: second

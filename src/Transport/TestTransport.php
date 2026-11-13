@@ -196,55 +196,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     public function process(int $number = -1, callable|string|null $filter = null): self
     {
         $receiver = null === $filter ? $this : new FilteredReceiver($this, new EnvelopeFilter($filter));
-        $processCount = 0;
-
-        $dispatcher = $this->scopedDispatcher();
-
-        // keep track of added listeners/subscribers so we can remove after
-        $listeners = [];
-        $subscribers = [];
-
-        $dispatcher->addListener(
-            WorkerRunningEvent::class,
-            $listeners[WorkerRunningEvent::class] = static function(WorkerRunningEvent $event) use (&$processCount) {
-                if ($event->isWorkerIdle()) {
-                    // stop worker if no messages to process
-                    $event->getWorker()->stop();
-
-                    return;
-                }
-
-                ++$processCount;
-            },
-        );
-
-        if ($number > 0) {
-            // stop if limit was placed on number to process
-            $dispatcher->addSubscriber($subscribers[] = new StopWorkerOnMessageLimitListener($number));
-        }
-
-        if (!$this->isCatchingExceptions()) {
-            $dispatcher->addListener(
-                WorkerMessageFailedEvent::class,
-                $listeners[WorkerMessageFailedEvent::class] = static function(WorkerMessageFailedEvent $event) {
-                    throw $event->getThrowable();
-                },
-            );
-        }
-
-        try {
-            $worker = new Worker([$this->name => $receiver], $this->bus, $dispatcher);
-            $worker->run(['sleep' => 0]);
-        } finally {
-            // remove added listeners/subscribers
-            foreach ($listeners as $event => $listener) {
-                $dispatcher->removeListener($event, $listener);
-            }
-
-            foreach ($subscribers as $subscriber) {
-                $dispatcher->removeSubscriber($subscriber);
-            }
-        }
+        $processCount = $this->runWorker([$this->name => $receiver], $number);
 
         if ($number > 0) {
             $failure = null === $filter
@@ -259,6 +211,36 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         }
 
         return $this;
+    }
+
+    /**
+     * @internal
+     *
+     * @param array<string, self> $transports
+     */
+    public static function processAll(array $transports, int $maxMessages = 1000): int
+    {
+        if ($maxMessages < 1) {
+            throw new \InvalidArgumentException('The maximum number of messages must be greater than zero.');
+        }
+
+        if (!$transports) {
+            return 0;
+        }
+
+        $transport = \reset($transports);
+        $processed = 0;
+
+        do {
+            $lastProcessed = $transport->runWorker($transports, $maxMessages - $processed + 1);
+            $processed += $lastProcessed;
+        } while ($lastProcessed > 0 && $processed <= $maxMessages);
+
+        if ($processed > $maxMessages) {
+            Assert::fail('Transports were not empty after {maximum} messages. A handler might be dispatching messages endlessly.', ['maximum' => $maxMessages]);
+        }
+
+        return $processed;
     }
 
     /**
@@ -540,6 +522,64 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     public static function disableResetOnKernelShutdown(): void
     {
         self::$resetOnKernelShutdownEnabled = false;
+    }
+
+    /**
+     * @param array<string, \Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface> $receivers
+     */
+    private function runWorker(array $receivers, int $number): int
+    {
+        $processCount = 0;
+
+        $dispatcher = $this->scopedDispatcher();
+
+        // keep track of added listeners/subscribers so we can remove after
+        $listeners = [];
+        $subscribers = [];
+
+        $dispatcher->addListener(
+            WorkerRunningEvent::class,
+            $listeners[WorkerRunningEvent::class] = static function(WorkerRunningEvent $event) use (&$processCount) {
+                if ($event->isWorkerIdle()) {
+                    // stop worker if no messages to process
+                    $event->getWorker()->stop();
+
+                    return;
+                }
+
+                ++$processCount;
+            },
+        );
+
+        if ($number > 0) {
+            // stop if limit was placed on number to process
+            $dispatcher->addSubscriber($subscribers[] = new StopWorkerOnMessageLimitListener($number));
+        }
+
+        $dispatcher->addListener(
+            WorkerMessageFailedEvent::class,
+            $listeners[WorkerMessageFailedEvent::class] = static function(WorkerMessageFailedEvent $event) {
+                if (!(self::$catchExceptions[$event->getReceiverName()] ?? true)) {
+                    throw $event->getThrowable();
+                }
+            },
+        );
+
+        try {
+            $worker = new Worker($receivers, $this->bus, $dispatcher);
+            $worker->run(['sleep' => 0]);
+        } finally {
+            // remove added listeners/subscribers
+            foreach ($listeners as $event => $listener) {
+                $dispatcher->removeListener($event, $listener);
+            }
+
+            foreach ($subscribers as $subscriber) {
+                $dispatcher->removeSubscriber($subscriber);
+            }
+        }
+
+        return $processCount;
     }
 
     private function scopedDispatcher(): EventDispatcherInterface

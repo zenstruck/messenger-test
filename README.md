@@ -114,6 +114,33 @@ class MyTest extends KernelTestCase // or WebTestCase
 messages created during the handling of messages (all by default or up to `$number`).
 
 
+### Processing Multiple Transports
+
+Use `processAll()` to consume all available messages across your test transports.
+This also processes messages sent to another transport by a handler or an outbox relay:
+
+```php
+$processed = $this->processAll();
+
+// or process only these transports
+$this->processAll(['outbox', 'async']);
+```
+
+Transports are consumed in priority order. Failure transports and transports that
+do not use `test://` are skipped by default. You can explicitly name a failure
+transport to process it. Every explicitly named transport must use `test://`.
+
+Delayed messages stay queued until they are due; advance your mock clock and call
+`processAll()` again to handle them. Each transport keeps its exception and retry
+settings. The return value counts deliveries, including outbox forwarding and retries.
+
+The call fails if it processes more than 1000 deliveries, to catch handlers that
+dispatch messages endlessly. Set `maxMessages` to change this limit:
+
+```php
+$this->processAll(maxMessages: 2000);
+```
+
 ### Processing specific messages
 
 You can also process only specific messages by passing a message class or a callable
