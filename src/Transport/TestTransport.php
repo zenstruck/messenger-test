@@ -20,6 +20,8 @@ use Symfony\Component\Messenger\Event\WorkerRunningEvent;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
+use Symfony\Component\Messenger\Stamp\ReceivedStamp;
+use Symfony\Component\Messenger\Stamp\TrustStamp;
 use Symfony\Component\Messenger\Transport\Receiver\ListableReceiverInterface;
 use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
@@ -399,6 +401,15 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
 
         if ($this->supportsDelayStamp() && $delayStamp = $envelope->last(DelayStamp::class)) {
             $envelope = $envelope->with(AvailableAtStamp::fromDelayStamp($delayStamp, $this->clock->now()));
+        }
+
+        if (!$this->shouldTestSerialization()
+            && null === $encoded
+            && \class_exists(TrustStamp::class)
+            && !$envelope->last(TrustStamp::class)
+            && !$envelope->last(ReceivedStamp::class)
+        ) {
+            $envelope = $envelope->with(TrustStamp::trusted());
         }
 
         if ($this->shouldTestSerialization()) {
