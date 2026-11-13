@@ -251,6 +251,22 @@ class MyTest extends KernelTestCase // or WebTestCase
 }
 ```
 
+### Asserting Stamp Values
+
+Pass a predicate to `assertHasStamp()` to check a stamp's values:
+
+```php
+use Symfony\Component\Messenger\Stamp\DelayStamp;
+
+$this->transport()->queue()->first()->assertHasStamp(
+    DelayStamp::class,
+    fn(DelayStamp $stamp) => $stamp->getDelay() === 5000,
+);
+```
+
+The assertion passes if at least one stamp of that type matches the predicate.
+It fails when the stamp is missing or none of its instances match.
+
 ### Processing Exceptions
 
 By default, when processing a message that fails, the `TestTransport` catches
