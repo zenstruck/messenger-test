@@ -118,6 +118,28 @@ trait InteractsWithMessenger // @phpstan-ignore trait.unused
         return $registry->get($transport);
     }
 
+    /**
+     * Processes all available messages across test transports, excluding failure transports unless explicitly named.
+     *
+     * @param list<string> $transports
+     *
+     * @return int The number of deliveries processed, including outbox forwarding and retries
+     */
+    final protected function processAll(array $transports = [], int $maxMessages = 1000): int
+    {
+        $this->init();
+        $container = self::getContainer();
+
+        if (!$container->has('zenstruck_messenger_test.transport_registry')) {
+            throw new \LogicException('Cannot access transports - is ZenstruckMessengerTestBundle enabled in your test environment?');
+        }
+
+        /** @var TestTransportRegistry $registry */
+        $registry = $container->get('zenstruck_messenger_test.transport_registry');
+
+        return $registry->processAll($transports, $maxMessages);
+    }
+
     final protected function bus(?string $bus = null): TestBus
     {
         $this->init();

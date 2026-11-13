@@ -23,9 +23,33 @@ final class TestTransportRegistry
     /** @var TransportInterface[] */
     private array $transports = [];
 
-    public function register(string $name, TransportInterface $transport): void
+    /** @var array<string, array{failure: bool, priority: int}> */
+    private array $options = [];
+
+    public function register(string $name, TransportInterface $transport, bool $failureTransport = false, int $priority = 0): void
     {
         $this->transports[$name] = $transport;
+        $this->options[$name] = ['failure' => $failureTransport, 'priority' => $priority];
+    }
+
+    /**
+     * @param list<string> $names
+     */
+    public function processAll(array $names = [], int $maxMessages = 1000): int
+    {
+        $transports = [];
+
+        foreach ($names ?: \array_keys($this->transports) as $name) {
+            if (!$names && ($this->options[$name]['failure'] || !$this->transports[$name] instanceof TestTransport)) {
+                continue;
+            }
+
+            $transports[$name] = $this->get($name);
+        }
+
+        \uksort($transports, fn(string $first, string $second) => $this->options[$second]['priority'] <=> $this->options[$first]['priority']);
+
+        return TestTransport::processAll($transports, $maxMessages);
     }
 
     public function get(?string $name = null): TestTransport

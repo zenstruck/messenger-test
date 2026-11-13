@@ -20,6 +20,9 @@ use Symfony\Component\Messenger\Event\WorkerRunningEvent;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
+use Symfony\Component\Messenger\Stamp\ReceivedStamp;
+use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
+use Symfony\Component\Messenger\Stamp\TrustStamp;
 use Symfony\Component\Messenger\Transport\Receiver\ListableReceiverInterface;
 use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
@@ -28,7 +31,6 @@ use Symfony\Component\Messenger\Worker;
 use Zenstruck\Assert;
 use Zenstruck\Messenger\Test\EnvelopeFilter;
 use Zenstruck\Messenger\Test\Stamp\AvailableAtStamp;
-use Zenstruck\Messenger\Test\TestEnvelope;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
@@ -79,6 +81,12 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
 
     /** @var array<string, Envelope[]> */
     private static array $queue = [];
+
+    /** @var \WeakMap<Envelope, array{body: string, headers?: array<string, string>}>|null */
+    private static ?\WeakMap $encoded = null;
+
+    /** @var array<string, int> */
+    private static array $nextId = [];
 
     // this setting applies to all transports
     private static bool $enableMessagesCollection = true;
@@ -188,55 +196,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     public function process(int $number = -1, callable|string|null $filter = null): self
     {
         $receiver = null === $filter ? $this : new FilteredReceiver($this, new EnvelopeFilter($filter));
-        $processCount = 0;
-
-        $dispatcher = $this->scopedDispatcher();
-
-        // keep track of added listeners/subscribers so we can remove after
-        $listeners = [];
-        $subscribers = [];
-
-        $dispatcher->addListener(
-            WorkerRunningEvent::class,
-            $listeners[WorkerRunningEvent::class] = static function(WorkerRunningEvent $event) use (&$processCount) {
-                if ($event->isWorkerIdle()) {
-                    // stop worker if no messages to process
-                    $event->getWorker()->stop();
-
-                    return;
-                }
-
-                ++$processCount;
-            },
-        );
-
-        if ($number > 0) {
-            // stop if limit was placed on number to process
-            $dispatcher->addSubscriber($subscribers[] = new StopWorkerOnMessageLimitListener($number));
-        }
-
-        if (!$this->isCatchingExceptions()) {
-            $dispatcher->addListener(
-                WorkerMessageFailedEvent::class,
-                $listeners[WorkerMessageFailedEvent::class] = static function(WorkerMessageFailedEvent $event) {
-                    throw $event->getThrowable();
-                },
-            );
-        }
-
-        try {
-            $worker = new Worker([$this->name => $receiver], $this->bus, $dispatcher);
-            $worker->run(['sleep' => 0]);
-        } finally {
-            // remove added listeners/subscribers
-            foreach ($listeners as $event => $listener) {
-                $dispatcher->removeListener($event, $listener);
-            }
-
-            foreach ($subscribers as $subscriber) {
-                $dispatcher->removeSubscriber($subscriber);
-            }
-        }
+        $processCount = $this->runWorker([$this->name => $receiver], $number);
 
         if ($number > 0) {
             $failure = null === $filter
@@ -251,6 +211,36 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         }
 
         return $this;
+    }
+
+    /**
+     * @internal
+     *
+     * @param array<string, self> $transports
+     */
+    public static function processAll(array $transports, int $maxMessages = 1000): int
+    {
+        if ($maxMessages < 1) {
+            throw new \InvalidArgumentException('The maximum number of messages must be greater than zero.');
+        }
+
+        if (!$transports) {
+            return 0;
+        }
+
+        $transport = \reset($transports);
+        $processed = 0;
+
+        do {
+            $lastProcessed = $transport->runWorker($transports, $maxMessages - $processed + 1);
+            $processed += $lastProcessed;
+        } while ($lastProcessed > 0 && $processed <= $maxMessages);
+
+        if ($processed > $maxMessages) {
+            Assert::fail('Transports were not empty after {maximum} messages. A handler might be dispatching messages endlessly.', ['maximum' => $maxMessages]);
+        }
+
+        return $processed;
     }
 
     /**
@@ -320,7 +310,11 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         }
 
         if (null === $filter && !$this->supportsDelayStamp()) {
-            return $this->deliver(\array_shift(self::$queue[$this->name]));
+            $id = \array_key_first(self::$queue[$this->name]);
+            $envelope = self::$queue[$this->name][$id];
+            unset(self::$queue[$this->name][$id]);
+
+            return $this->deliver($envelope);
         }
 
         $now = $this->supportsDelayStamp() ? $this->clock->now() : null;
@@ -347,6 +341,7 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     public function ack(Envelope $envelope): void
     {
+        $this->remove($envelope);
         $this->collectMessage(self::$acknowledged, $envelope);
     }
 
@@ -355,20 +350,25 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     public function reject(Envelope $envelope): void
     {
+        $this->remove($envelope);
         $this->collectMessage(self::$rejected, $envelope);
     }
 
     public function all(?int $limit = null): iterable
     {
         return \array_map(
-            static fn(TestEnvelope $envelope) => $envelope->envelope,
-            \array_slice($this->queue()->all(), 0, $limit),
+            fn(Envelope $envelope) => $this->deliver($envelope)[0],
+            \array_slice(self::$queue[$this->name] ?? [], 0, $limit),
         );
     }
 
     public function find(mixed $id): ?Envelope
     {
-        throw new \BadMethodCallException('Not supported.');
+        if ((!\is_int($id) && !\is_string($id)) || !isset(self::$queue[$this->name][$id])) {
+            return null;
+        }
+
+        return $this->deliver(self::$queue[$this->name][$id])[0];
     }
 
     public function getMessageCount(): int
@@ -382,6 +382,8 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     public function send($what): Envelope
     {
+        $encoded = \is_array($what) ? $what : null;
+
         if (\is_array($what)) {
             $what = $this->serializer->decode($what);
         }
@@ -390,29 +392,33 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
             throw new \InvalidArgumentException(\sprintf('"%s()" requires a message/Envelope object or decoded message array. "%s" given.', __METHOD__, \get_debug_type($what)));
         }
 
+        $id = self::$nextId[$this->name] ?? 1;
+        self::$nextId[$this->name] = $id + 1;
         $envelope = Envelope::wrap($what);
+        $envelope = $envelope->withoutAll(TransportMessageIdStamp::class);
+        $envelope = $envelope->with(new TransportMessageIdStamp($id));
 
         if ($this->supportsDelayStamp() && $delayStamp = $envelope->last(DelayStamp::class)) {
             $envelope = $envelope->with(AvailableAtStamp::fromDelayStamp($delayStamp, $this->clock->now()));
         }
 
+        // Check the stamp map to support analysis against Messenger versions without TrustStamp.
+        if (!$this->shouldTestSerialization()
+            && null === $encoded
+            && \class_exists(TrustStamp::class)
+            && !isset($envelope->all()[TrustStamp::class])
+            && !$envelope->last(ReceivedStamp::class)
+        ) {
+            $envelope = $envelope->with(TrustStamp::trusted());
+        }
+
         if ($this->shouldTestSerialization()) {
-            if ($this->impactsAssertionsCount()) {
-                Assert::try(
-                    fn() => $this->serializer->decode($this->serializer->encode($envelope)),
-                    'A problem occurred in the serialization process.',
-                );
-            } else {
-                try {
-                    $this->serializer->decode($this->serializer->encode($envelope));
-                } catch (\Throwable $e) {
-                    Assert::fail('A problem occurred in the serialization process.', ['exception' => $e, 'message' => $e->getMessage()]);
-                }
-            }
+            self::$encoded ??= new \WeakMap();
+            self::$encoded[$envelope] = $this->encode($envelope, $encoded);
         }
 
         $this->collectMessage(self::$dispatched, $envelope);
-        $this->collectMessage(self::$queue, $envelope, force: true);
+        self::$queue[$this->name][$id] = $envelope;
 
         if (!$this->isIntercepting()) {
             $this->process();
@@ -435,6 +441,8 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     public static function resetAll(): void
     {
         self::$queue = self::$dispatched = self::$acknowledged = self::$rejected = [];
+        self::$encoded = null;
+        self::$nextId = [];
         self::initialize();
     }
 
@@ -517,6 +525,64 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
         self::$resetOnKernelShutdownEnabled = false;
     }
 
+    /**
+     * @param array<string, \Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface> $receivers
+     */
+    private function runWorker(array $receivers, int $number): int
+    {
+        $processCount = 0;
+
+        $dispatcher = $this->scopedDispatcher();
+
+        // keep track of added listeners/subscribers so we can remove after
+        $listeners = [];
+        $subscribers = [];
+
+        $dispatcher->addListener(
+            WorkerRunningEvent::class,
+            $listeners[WorkerRunningEvent::class] = static function(WorkerRunningEvent $event) use (&$processCount) {
+                if ($event->isWorkerIdle()) {
+                    // stop worker if no messages to process
+                    $event->getWorker()->stop();
+
+                    return;
+                }
+
+                ++$processCount;
+            },
+        );
+
+        if ($number > 0) {
+            // stop if limit was placed on number to process
+            $dispatcher->addSubscriber($subscribers[] = new StopWorkerOnMessageLimitListener($number));
+        }
+
+        $dispatcher->addListener(
+            WorkerMessageFailedEvent::class,
+            $listeners[WorkerMessageFailedEvent::class] = static function(WorkerMessageFailedEvent $event) {
+                if (!(self::$catchExceptions[$event->getReceiverName()] ?? true)) {
+                    throw $event->getThrowable();
+                }
+            },
+        );
+
+        try {
+            $worker = new Worker($receivers, $this->bus, $dispatcher);
+            $worker->run(['sleep' => 0]);
+        } finally {
+            // remove added listeners/subscribers
+            foreach ($listeners as $event => $listener) {
+                $dispatcher->removeListener($event, $listener);
+            }
+
+            foreach ($subscribers as $subscriber) {
+                $dispatcher->removeSubscriber($subscriber);
+            }
+        }
+
+        return $processCount;
+    }
+
     private function scopedDispatcher(): EventDispatcherInterface
     {
         // Symfony 8.2+ deprecates mutating the container's dispatcher
@@ -530,9 +596,9 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     /**
      * @param array<string, Envelope[]> $messagesCollection
      */
-    private function collectMessage(array &$messagesCollection, Envelope $envelope, bool $force = false): void
+    private function collectMessage(array &$messagesCollection, Envelope $envelope): void
     {
-        if (!self::$enableMessagesCollection && !$force) {
+        if (!self::$enableMessagesCollection) {
             return;
         }
 
@@ -545,12 +611,53 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
      */
     private function deliver(Envelope $envelope): array
     {
-        if ($this->shouldTestSerialization()) {
-            // Simulate real transport by encoding/decoding the message
-            return [$this->serializer->decode($this->serializer->encode($envelope))];
+        if (!isset(self::$encoded[$envelope])) {
+            return [$envelope];
         }
 
-        return [$envelope];
+        $decoded = $this->serializer->decode(self::$encoded[$envelope]);
+
+        if ($stamp = $envelope->last(TransportMessageIdStamp::class)) {
+            $decoded = $decoded->withoutAll(TransportMessageIdStamp::class);
+            $decoded = $decoded->with($stamp);
+        }
+
+        return [$decoded];
+    }
+
+    private function remove(Envelope $envelope): void
+    {
+        $stamp = $envelope->last(TransportMessageIdStamp::class);
+        $id = $stamp?->getId();
+
+        if (\is_int($id) || \is_string($id)) {
+            unset(self::$queue[$this->name][$id]);
+        }
+    }
+
+    /**
+     * @param array{body: string, headers?: array<string, string>}|null $encoded
+     *
+     * @return array{body: string, headers?: array<string, string>}
+     */
+    private function encode(Envelope $envelope, ?array $encoded): array
+    {
+        $serialize = function() use ($envelope, $encoded): array {
+            $encoded ??= $this->serializer->encode($envelope);
+            $this->serializer->decode($encoded);
+
+            return $encoded;
+        };
+
+        if ($this->impactsAssertionsCount()) {
+            return Assert::try($serialize, 'A problem occurred in the serialization process.');
+        }
+
+        try {
+            return $serialize();
+        } catch (\Throwable $e) {
+            Assert::fail('A problem occurred in the serialization process.', ['exception' => $e, 'message' => $e->getMessage()]);
+        }
     }
 
     private function hasMessagesToProcess(?EnvelopeFilter $filter = null): bool

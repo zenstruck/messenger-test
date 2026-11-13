@@ -37,12 +37,22 @@ final class TestEnvelope
     }
 
     /**
-     * @param class-string<StampInterface> $class
+     * @template T of StampInterface
+     *
+     * @param class-string<T>       $class
+     * @param callable(T):bool|null $filter
      */
-    public function assertHasStamp(string $class): self
+    public function assertHasStamp(string $class, ?callable $filter = null): self
     {
-        Assert::that($this->envelope->all($class))->isNotEmpty(
-            'Expected to find stamp "{stamp}" but did not.',
+        $stamps = $this->envelope->all($class);
+
+        if (null !== $filter) {
+            $stamps = \array_filter($stamps, $filter);
+        }
+
+        $expectation = Assert::that($stamps);
+        $expectation->isNotEmpty(
+            null === $filter ? 'Expected to find stamp "{stamp}" but did not.' : 'Expected to find stamp "{stamp}" matching the filter but none was found.',
             ['stamp' => $class],
         );
 
