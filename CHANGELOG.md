@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [v1.16.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.16.0)
+
+November 13th, 2026 - [v1.15.1...v1.16.0](https://github.com/zenstruck/messenger-test/compare/v1.15.1...v1.16.0)
+
+* 2e20679 feat: expand Messenger testing support (#113) by @kbond
+* d74b7f5 fix: support PHPStan on older Messenger versions (#113) by @kbond
+* c86b6cc test: cover Symfony 8.2 chains and compensation (#113) by @kbond
+* 9fb8859 feat: assert stamp values with predicates (#113) by @kbond
+* e117cc0 feat: process messages across multiple test transports (#113) by @kbond
+* 99560e2 fix: support failed message lookup and removal (#113) by @kbond
+* 91ceb95 fix: trust local messages when serialization is disabled (#113) by @kbond
+* 08b6733 fix: preserve encoded messages until delivery (#113) by @kbond
+
 ## [v1.15.1](https://github.com/zenstruck/messenger-test/releases/tag/v1.15.1)
 
 October 28th, 2026 - [v1.15.0...v1.15.1](https://github.com/zenstruck/messenger-test/compare/v1.15.0...v1.15.1)
