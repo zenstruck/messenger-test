@@ -49,6 +49,31 @@ final class TestTransportTest extends TestCase
     }
 
     #[Test]
+    public function serialization_test_fails_when_the_serializer_returns_a_decoding_failure(): void
+    {
+        $serializer = new class(new PhpSerializer()) implements SerializerInterface {
+            public function __construct(private SerializerInterface $inner)
+            {
+            }
+
+            public function decode(array $encodedEnvelope): Envelope
+            {
+                return new Envelope(new MessageDecodingFailedException('Could not decode message.'));
+            }
+
+            public function encode(Envelope $envelope): array
+            {
+                return $this->inner->encode($envelope);
+            }
+        };
+
+        $this->expectException(AssertionFailedError::class);
+        $this->expectExceptionMessage('A problem occurred in the serialization process.');
+
+        $this->createTransport($serializer)->send(new MessageA());
+    }
+
+    #[Test]
     public function receives_the_message_as_it_was_when_sent(): void
     {
         $transport = $this->createTransport();

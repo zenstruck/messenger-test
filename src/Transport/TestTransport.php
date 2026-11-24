@@ -17,6 +17,7 @@ use Symfony\Component\EventDispatcher\ScopedEventDispatcher;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerRunningEvent;
+use Symfony\Component\Messenger\Exception\MessageDecodingFailedException;
 use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
@@ -644,7 +645,12 @@ final class TestTransport implements TransportInterface, ListableReceiverInterfa
     {
         $serialize = function() use ($envelope, $encoded): array {
             $encoded ??= $this->serializer->encode($envelope);
-            $this->serializer->decode($encoded);
+            $decoded = $this->serializer->decode($encoded)->getMessage();
+
+            // since symfony/messenger 8.1, decode() returns decoding failures instead of throwing them
+            if ($decoded instanceof MessageDecodingFailedException) {
+                throw $decoded;
+            }
 
             return $encoded;
         };
