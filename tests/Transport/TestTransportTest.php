@@ -32,6 +32,7 @@ use Symfony\Component\Messenger\Transport\Serialization\ClaimCheckSerializer;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageA;
+use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageI;
 use Zenstruck\Messenger\Test\Transport\TestTransport;
 
 final class TestTransportTest extends TestCase
@@ -71,6 +72,15 @@ final class TestTransportTest extends TestCase
         $this->expectExceptionMessage('A problem occurred in the serialization process.');
 
         $this->createTransport($serializer)->send(new MessageA());
+    }
+
+    #[Test]
+    public function serialization_test_fails_for_a_message_that_can_be_encoded_but_not_decoded(): void
+    {
+        $this->expectException(AssertionFailedError::class);
+        $this->expectExceptionMessage('A problem occurred in the serialization process.');
+
+        $this->createTransport()->send(new MessageI());
     }
 
     #[Test]
