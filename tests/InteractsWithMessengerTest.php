@@ -39,6 +39,7 @@ use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageE;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageF;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageG;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageH;
+use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageI;
 use Zenstruck\Messenger\Test\Tests\Fixture\Messenger\WorkerMessageHandledListener;
 use Zenstruck\Messenger\Test\Tests\Fixture\NoBundleKernel;
 use Zenstruck\Messenger\Test\Transport\TestTransport;
@@ -814,6 +815,19 @@ final class InteractsWithMessengerTest extends WebTestCase
         ;
 
         Assert::run(fn() => $this->transport('async2')->send(new Envelope(new MessageG())));
+    }
+
+    #[Test]
+    public function decoding_problem_assertions(): void
+    {
+        self::bootKernel(['environment' => 'multi_transport']);
+
+        // "MessageI" can be encoded but not decoded, only transport async1 should catch this.
+        Assert::that(fn() => $this->transport('async1')->send(new Envelope(new MessageI())))
+            ->throws(AssertionFailedError::class)
+        ;
+
+        Assert::run(fn() => $this->transport('async2')->send(new Envelope(new MessageI())));
     }
 
     #[Test]

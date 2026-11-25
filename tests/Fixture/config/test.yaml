@@ -20,6 +20,8 @@ services:
         tags: [messenger.message_handler]
     Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageHHandler:
         tags: [messenger.message_handler]
+    Zenstruck\Messenger\Test\Tests\Fixture\Messenger\MessageIHandler:
+        tags: [messenger.message_handler]
     Zenstruck\Messenger\Test\Tests\Fixture\Messenger\WorkerMessageHandledListener: ~
 
     message_bus:
