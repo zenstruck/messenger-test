@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v1.16.1](https://github.com/zenstruck/messenger-test/releases/tag/v1.16.1)
+
+November 25th, 2026 - [v1.16.0...v1.16.1](https://github.com/zenstruck/messenger-test/compare/v1.16.0...v1.16.1)
+
+* 68ecccb fix: fail the serialization test when decode() returns a decoding failure (#115) by @VincentChataignier
+
 ## [v1.16.0](https://github.com/zenstruck/messenger-test/releases/tag/v1.16.0)
 
 November 13th, 2026 - [v1.15.1...v1.16.0](https://github.com/zenstruck/messenger-test/compare/v1.15.1...v1.16.0)
